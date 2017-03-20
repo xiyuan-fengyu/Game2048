@@ -281,19 +281,30 @@ class Game2048 extends egret.DisplayObjectContainer {
     };
 
     private checkGameOver() {
-        let avas = this.availableGridPos(1);
-        if (avas.length == 0) {
-            if (this.canMerge(0, 4, 1) 
-                || this.canMerge(3, 4, -1)
-                || this.canMerge(0, 1, 4)
-                || this.canMerge(12, 1, -4)) {
-                //还可以移动或合并
+        for (var i = 0; i < 16; i++) {
+            let grid = this.grids[i];
+            if (grid == null) {
+                return;
             }
             else {
-                this.isGameOver = false;
-                this.showGameOver();
+                if (i % 4 < 3) {
+                    let rightGrid = this.grids[i + 1];
+                    if (rightGrid == null || grid.num == rightGrid.num) {
+                        return;
+                    }
+                }
+
+                if (i / 4 < 3) {
+                    let downGrid = this.grids[i + 4];
+                    if (downGrid == null || grid.num == downGrid.num) {
+                        return;
+                    }
+                }
             }
         }
+
+        this.isGameOver = true;
+        this.showGameOver();
     }
 
     private showGameOver() {
