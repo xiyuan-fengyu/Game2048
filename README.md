@@ -8,5 +8,6 @@ Egret/Eui的学习demo，利用 egret 和 eui 实现了一个 2048 游戏
 4. 在TypeScript中通过 exml 中定义的id快速找到控件  
 5. 如何使用 Tween 动画，包括 exml 中定义动画，以及通过 TypeScript 定义动画  
 
-demo体验地址  
+demo体验地址（资源可能会加载一段时间，偷懒，没有loading动画 XD）  
 https://xiyuan-fengyu.github.io/2048/  
+  
