@@ -27,49 +27,55 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////
 
-class Main extends egret.Sprite{
+class Main extends eui.UILayer {
 
-    public constructor(){
-        super();
 
-        let assetAdapter = new AssetAdapter();
-        egret.registerImplementation("eui.IAssetAdapter",assetAdapter);
-        egret.registerImplementation("eui.IThemeAdapter",new ThemeAdapter());
+    protected createChildren(): void {
+        super.createChildren();
 
-        RES.addEventListener(RES.ResourceEvent.CONFIG_COMPLETE, this.onConfigComplete, this);
-        RES.loadConfig("resource/default.res.json", "resource/");
+        egret.lifecycle.addLifecycleListener((context) => {
+            // custom lifecycle plugin
+        });
+
+        egret.lifecycle.onPause = () => {
+            egret.ticker.pause();
+        };
+
+        egret.lifecycle.onResume = () => {
+            egret.ticker.resume();
+        };
+
+        this.start().catch(e => {
+            console.log(e);
+        });
     }
 
-    private onConfigComplete(event:RES.ResourceEvent):void {
-        RES.removeEventListener(RES.ResourceEvent.CONFIG_COMPLETE, this.onConfigComplete, this);
-        let theme = new eui.Theme("resource/default.thm.json", this.stage);
-        theme.addEventListener(eui.UIEvent.COMPLETE, this.onThemeLoadComplete, this);
-
-        RES.addEventListener(RES.ResourceEvent.GROUP_COMPLETE, this.onResourceLoadComplete, this);
-        RES.loadGroup("preload");
+    private async start() {
+        await this.loadResource();
+        this.createGameScene();
     }
 
-    private isThemeLoadEnd: boolean = false;
+    private async loadResource() {
+        try {
+            //注入自定义的素材解析器
+            egret.registerImplementation("eui.IAssetAdapter", new AssetAdapter());
+            egret.registerImplementation("eui.IThemeAdapter", new ThemeAdapter());
 
-    private onThemeLoadComplete(): void {
-        this.isThemeLoadEnd = true;
-        this.createScene();
-    }
-
-    private isResourceLoadEnd: boolean = false;
-
-    private onResourceLoadComplete(event:RES.ResourceEvent):void {
-        if (event.groupName == "preload") {
-            RES.removeEventListener(RES.ResourceEvent.GROUP_COMPLETE, this.onResourceLoadComplete, this);
-            this.isResourceLoadEnd = true;
-            this.createScene();
+            // 加载默认资源配置
+            await RES.loadConfig("resource/default.res.json", "resource/");
+            // 加载资源组
+            await RES.loadGroup("preload");
+            // 加载主题
+            await new Promise(resolve => new eui.Theme("resource/default.thm.json", this.stage)
+                .addEventListener(eui.UIEvent.COMPLETE, resolve, this));
+        }
+        catch (e) {
+            console.error(e);
         }
     }
 
-    private createScene() {
-        if(this.isThemeLoadEnd && this.isResourceLoadEnd){
-            this.addChild(new Game2048());
-        }
+    protected createGameScene(): void {
+        this.addChild(new Game2048());
     }
 
 }

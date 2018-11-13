@@ -1,28 +1,25 @@
 {
-  "native": {
-    "path_ignore": []
+  "engineVersion": "5.2.12",
+  "compilerVersion": "5.2.12",
+  "template": {},
+  "target": {
+    "current": "web"
   },
-  "publish": {
-    "web": 0,
-    "native": 1,
-    "path": "bin-release"
-  },
-  "egret_version": "4.0.3",
   "modules": [
     {
       "name": "egret"
     },
     {
-      "name": "game"
-    },
-    {
-      "name": "res"
-    },
-    {
       "name": "eui"
     },
     {
+      "name": "assetsmanager"
+    },
+    {
       "name": "tween"
+    },
+    {
+      "name": "promise"
     }
   ]
 }

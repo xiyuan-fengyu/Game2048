@@ -1,72 +1,76 @@
-<?xml version="1.0" encoding="utf-8"?>
-<e:Group class="GameUI" width="640" height="1280" xmlns:e="http://ns.egret.com/eui" xmlns:w="http://ns.egret.com/wing" xmlns:tween="egret.tween.*">
-	<w:Declarations>
-		<tween:TweenGroup id="slidIn2048">
-			<tween:TweenItem target="{label}">
-				<tween:Set>
-					<tween:props>
-						<e:Object x="{-200}" y="{0}"/>
-					</tween:props>
-				</tween:Set>
-				<tween:To duration="800" ease="sineInOut">
-					<tween:props>
-						<e:Object x="{20}" y="{0}"/>
-					</tween:props>
-				</tween:To>
-			</tween:TweenItem>
-		</tween:TweenGroup>
-	</w:Declarations>
-	
-	<e:Group id="data"/>
-	<e:Image left="0" right="0" top="0" bottom="0" fillMode="repeat" source="bg_2048_png" locked="true"/>
-	<e:Group left="0" top="0" width="100%" height="100%">
-		<e:Group left="20" y="0" height="120" width="100%">
-			<e:Label id="label" text="2048" size="76" textColor="0x776e65" anchorOffsetX="0" verticalAlign="middle" textAlign="center" height="120" bold="true" cacheAsBitmap="true" italic="true" x="-200"/>
-			<e:Button id="newGame" label="New Game" enabled="true" right="20" verticalCenter="0" visible="true" skinName="skins.button.NewGame"/>
-			<e:layout>
-				<e:BasicLayout/>
-			</e:layout>
-		</e:Group>
-		<e:Group width="100%" height="120" x="22" y="120" scaleX="1" scaleY="1">
-			<e:layout>
-				<e:BasicLayout/>
-			</e:layout>
-			<e:Group height="70%" verticalCenter="0" right="52%">
-				<e:Rect fillColor="0xbbada0" left="0" right="0" top="0" bottom="0" ellipseWidth="12" ellipseHeight="12"/>
-				<e:Label text="SCORE" top="0" bottom="50%" verticalAlign="middle" textAlign="center" left="16" right="16" size="25" textColor="0xeee4da"/>
-				<e:Label top="50%" bottom="0" verticalAlign="middle" textAlign="center" left="16" right="16" size="28" textColor="0xffffff" bold="true" text="{data.curScore}"/>
-				<e:layout>
-					<e:BasicLayout/>
-				</e:layout>
-			</e:Group>
-			<e:Group height="70%" verticalCenter="0" left="52%">
-				<e:Rect fillColor="0xBBADA0" left="0" right="0" top="0" bottom="0" ellipseWidth="12" ellipseHeight="12"/>
-				<e:Label text="BEST" top="0" bottom="50%" verticalAlign="middle" textAlign="center" left="16" right="16" size="25" textColor="0xEEE4DA"/>
-				<e:Label top="50%" bottom="0" verticalAlign="middle" textAlign="center" left="16" right="16" size="28" textColor="0xFFFFFF" text="{data.bestScore}" bold="true"/>
-				<e:layout>
-				<e:BasicLayout/>
-				</e:layout>
-			</e:Group>
-		</e:Group>
-		<e:Group id="gamePanel" width="600" height="600" x="232" y="120">
+<?xml version="1.0" encoding="utf-8" ?>
+ <e:Group class="uis.GameUI" width="1080" height="1920" xmlns:e="http://ns.egret.com/eui" xmlns:w="http://ns.egret.com/wing" xmlns:tween="egret.tween.*">
+	<w:Config id="1670bcf4414"/>
+    <w:Declarations>
+        <tween:TweenGroup id="slidIn2048">
+            <tween:TweenItem target="{label}">
+                <tween:Set>
+                    <tween:props>
+                        <e:Object x="{-320}" y="{0}"/>
+                    </tween:props>
+                </tween:Set>
+                <tween:To duration="800" ease="sineInOut">
+                    <tween:props>
+                        <e:Object x="{40}" y="{0}"/>
+                    </tween:props>
+                </tween:To>
+            </tween:TweenItem>
+        </tween:TweenGroup>
+    </w:Declarations>
 
-			<e:Group id="gameOver" width="280" height="160" horizontalCenter="0" verticalCenter="0">
-				<e:Rect fillColor="0xe0e0e0" fillAlpha="0.7" enabled="true" ellipseWidth="32" ellipseHeight="32" left="0" top="0" right="0" bottom="0"/>
-				<e:Label text="Game Over !" anchorOffsetX="0" anchorOffsetY="0" height="60" left="0" textAlign="center" verticalAlign="middle" bold="true" italic="true" size="35" textColor="0xff3600" width="100%" top="0"/>
-				<e:Label anchorOffsetX="0" anchorOffsetY="0" height="50" left="0" right="0" top="60" size="28" text="{data.curScore}" textAlign="center" bold="true" verticalAlign="middle" textColor="0x727272"/>
-				<e:Label id="newGameInGameOver" anchorOffsetX="0" anchorOffsetY="0" left="0" right="0" size="28" text="New Game" textAlign="center" bold="true" verticalAlign="middle" bottom="0" textColor="0x288cff" height="50"/>
-				<e:layout>
-					<e:BasicLayout/>
-				</e:layout>
-			</e:Group>
-		
-			<e:layout>
-				<e:BasicLayout/>
-			</e:layout>
-		</e:Group>
-		<e:layout>
-			<e:VerticalLayout horizontalAlign="center" gap="0"/>
-		</e:layout>
-	</e:Group>
+    <e:Group id="data"/>
+    <e:Image left="0" right="0" top="0" bottom="0" fillMode="repeat" source="bg_2048_png"/>
+    <e:Group left="0" top="0" width="100%" height="100%">
+        <e:Group left="20" y="0" height="180" width="100%" verticalCenter="0">
+            <e:Label id="label" text="2048" size="128" textColor="0x776e65" anchorOffsetX="0" verticalAlign="middle" textAlign="center" height="120" bold="true" cacheAsBitmap="true" italic="true" x="-320" verticalCenter="0"/>
+            <e:Button id="newGame" label="New Game" enabled="true" right="40" verticalCenter="0" visible="true" skinName="skins.button.NewGame" touchEnabled="true"/>
+            <e:layout>
+                <e:BasicLayout/>
+            </e:layout>
+        </e:Group>
+        <e:Group width="100%" height="200" x="22" y="120" scaleX="1" scaleY="1">
+            <e:layout>
+                <e:BasicLayout/>
+            </e:layout>
+            <e:Group height="70%" verticalCenter="0" left="40" width="480">
+                <e:Rect fillColor="0xbbada0" left="0" right="0" top="0" bottom="0" ellipseWidth="12" ellipseHeight="12"/>
+                <e:Label text="SCORE" top="0" verticalAlign="middle" textAlign="center" left="16" right="16" size="32" textColor="0xeee4da" height="50%"/>
+                <e:Label verticalAlign="middle" textAlign="center" left="16" right="16" size="32" textColor="0xffffff" bold="true" text="{data.curScore}" height="50%" bottom="0"/>
+                <e:layout>
+                    <e:BasicLayout/>
+                </e:layout>
+            </e:Group>
+            <e:Group height="70%" verticalCenter="0" right="40" anchorOffsetX="0" width="480">
+                <e:Rect fillColor="0xBBADA0" left="0" right="0" top="0" bottom="0" ellipseWidth="12" ellipseHeight="12"/>
+                <e:Label text="BEST" top="0" verticalAlign="middle" textAlign="center" left="16" right="16" size="32" textColor="0xEEE4DA" height="50%"/>
+                <e:Label verticalAlign="middle" textAlign="center" left="16" right="16" size="32" textColor="0xFFFFFF" text="{data.bestScore}" bold="true" height="50%" bottom="0"/>
+                <e:layout>
+                    <e:BasicLayout/>
+                </e:layout>
+            </e:Group>
+        </e:Group>
+        <e:Group width="1000" height="1000" x="232" y="120">
+            <e:Group id="gridBox" width="1000" height="1000" x="0" y="0">
+                <e:layout>
+                    <e:BasicLayout/>
+                </e:layout>
+            </e:Group>
+            <e:Group id="gameOver" width="640" height="360" horizontalCenter="0" verticalCenter="0" visible="false">
+                <e:Rect fillColor="0xe0e0e0" fillAlpha="0.9" enabled="true" ellipseWidth="32" ellipseHeight="32" left="0" top="0" right="0" bottom="0"/>
+                <e:Label text="Game Over !" anchorOffsetX="0" anchorOffsetY="0" height="120" left="0" textAlign="center" verticalAlign="middle" bold="true" italic="true" size="64" textColor="0xff3600" width="100%" top="0"/>
+                <e:Label anchorOffsetX="0" anchorOffsetY="0" left="0" right="0" top="120" size="42" text="{data.curScore}" textAlign="center" bold="true" verticalAlign="middle" textColor="0x727272" bottom="80"/>
+                <e:Label id="newGameInGameOver" anchorOffsetX="0" anchorOffsetY="0" left="0" right="0" size="36" text="New Game" textAlign="center" bold="true" verticalAlign="middle" bottom="0" textColor="0x288cff" height="80" touchEnabled="true"/>
+                <e:layout>
+                    <e:BasicLayout/>
+                </e:layout>
+            </e:Group>
+
+            <e:layout>
+                <e:BasicLayout/>
+            </e:layout>
+        </e:Group>
+        <e:layout>
+            <e:VerticalLayout horizontalAlign="center" gap="0"/>
+        </e:layout>
+    </e:Group>
 </e:Group>
-

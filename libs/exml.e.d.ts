@@ -54,5 +54,7 @@ declare module skins.button{
 	class NewGame extends eui.Skin{
 	}
 }
-declare class GameUI extends eui.Group{
+declare module uis{
+	class GameUI extends eui.Group{
+	}
 }

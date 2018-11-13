@@ -1,10 +1,12 @@
 var __reflect = (this && this.__reflect) || function (p, c, t) {
     p.__class__ = c, t ? t.push(c) : t = [c], p.__types__ = p.__types__ ? t.concat(p.__types__) : t;
 };
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+var __extends = this && this.__extends || function __extends(t, e) { 
+ function r() { 
+ this.constructor = t;
+}
+for (var i in e) e.hasOwnProperty(i) && (t[i] = e[i]);
+r.prototype = e.prototype, t.prototype = new r();
 };
 //////////////////////////////////////////////////////////////////////////////////////
 //
@@ -697,8 +699,312 @@ var eui;
 //  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////////////
+var eui;
+(function (eui) {
+    /**
+     * The State class defines a view state, a particular view of a component.
+     *
+     * For example, a product thumbnail could have two view states;
+     * a base view state with minimal information, and a rich view state with
+     * additional information.
+     *
+     * @version Egret 2.4
+     * @version eui 1.0
+     * @platform Web,Native
+     * @language en_US
+     */
+    /**
+     * State 类定义视图状态，即组件的特定视图。
+     *
+     * 例如，产品缩略图可以有两个视图状态，包含最少信息的基本视图状态和包含附加信息的丰富视图状态。
+     *
+     * @version Egret 2.4
+     * @version eui 1.0
+     * @platform Web,Native
+     * @language zh_CN
+     */
+    var State = (function (_super) {
+        __extends(State, _super);
+        /**
+         * Constructor.
+         *
+         * @param name The name of the view state.
+         * State names must be unique for a given component.
+         * This property must be set.
+         * @param overrides The overrides for this view state, as an Array of objects that implement
+         * the IOverride interface. These overrides are applied in order when the
+         * state is entered, and removed in reverse order when the state is exited.
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 创建一个State实例。
+         *
+         * @param name 视图状态的名称。给定组件的状态名称必须唯一。必须设置此属性。
+         * @param overrides 该视图状态的覆盖，表现为实现 IOverride 接口的对象的数组。
+         * 这些覆盖在进入状态时按顺序应用，在退出状态时按相反的顺序删除。
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        function State(name, overrides) {
+            if (overrides === void 0) { overrides = []; }
+            var _this = _super.call(this) || this;
+            _this.name = name;
+            _this.overrides = overrides;
+            return _this;
+        }
+        /**
+         * Initialize this state and all of its overrides.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 初始化视图状态
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        State.prototype.initialize = function (host, stage) {
+            var overrides = this.overrides;
+            var length = overrides.length;
+            for (var i = 0; i < length; i++) {
+                var addItems = overrides[i];
+                if (addItems instanceof eui.AddItems) {
+                    var target = host[addItems.target];
+                    if (target && target instanceof eui.Image && !target.$parent) {
+                        stage.addChild(target);
+                        stage.removeChild(target);
+                    }
+                }
+            }
+        };
+        return State;
+    }(egret.HashObject));
+    eui.State = State;
+    __reflect(State.prototype, "eui.State");
+})(eui || (eui = {}));
+(function (eui) {
+    var sys;
+    (function (sys) {
+        /**
+         * @private
+         */
+        var StateClient = (function () {
+            function StateClient() {
+            }
+            Object.defineProperty(StateClient.prototype, "states", {
+                /**
+                 * @private
+                 * 为此组件定义的视图状态。
+                 */
+                get: function () {
+                    return this.$stateValues.states;
+                },
+                set: function (value) {
+                    if (!value)
+                        value = [];
+                    var values = this.$stateValues;
+                    values.states = value;
+                    var statesMap = {};
+                    var length = value.length;
+                    for (var i = 0; i < length; i++) {
+                        var state = value[i];
+                        statesMap[state.name] = state;
+                    }
+                    values.statesMap = statesMap;
+                    if (values.parent) {
+                        this.commitCurrentState();
+                    }
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(StateClient.prototype, "currentState", {
+                /**
+                 * @private
+                 * 组件的当前视图状态。将其设置为 "" 或 null 可将组件重置回其基本状态。
+                 */
+                get: function () {
+                    return this.$stateValues.currentState;
+                },
+                set: function (value) {
+                    var values = this.$stateValues;
+                    values.explicitState = value;
+                    values.currentState = value;
+                    this.commitCurrentState();
+                },
+                enumerable: true,
+                configurable: true
+            });
+            /**
+             * @private
+             * 应用当前的视图状态。子类覆盖此方法在视图状态发生改变时执行相应更新操作。
+             */
+            StateClient.prototype.commitCurrentState = function () {
+                var values = this.$stateValues;
+                if (!values.parent) {
+                    return;
+                }
+                var destination = values.statesMap[values.currentState];
+                if (!destination) {
+                    if (values.states.length > 0) {
+                        values.currentState = values.states[0].name;
+                    }
+                    else {
+                        return;
+                    }
+                }
+                if (values.oldState == values.currentState) {
+                    return;
+                }
+                var parent = values.parent;
+                var state = values.statesMap[values.oldState];
+                if (state) {
+                    var overrides = state.overrides;
+                    var length_3 = overrides.length;
+                    for (var i = 0; i < length_3; i++) {
+                        overrides[i].remove(this, parent);
+                    }
+                }
+                values.oldState = values.currentState;
+                state = values.statesMap[values.currentState];
+                if (state) {
+                    var overrides = state.overrides;
+                    var length_4 = overrides.length;
+                    for (var i = 0; i < length_4; i++) {
+                        overrides[i].apply(this, parent);
+                    }
+                }
+            };
+            /**
+             * @private
+             * 返回是否含有指定名称的视图状态
+             * @param stateName 要检查的视图状态名称
+             */
+            StateClient.prototype.hasState = function (stateName) {
+                return !!this.$stateValues.statesMap[stateName];
+            };
+            /**
+             * @private
+             * 初始化所有视图状态
+             */
+            StateClient.prototype.initializeStates = function (stage) {
+                this.$stateValues.intialized = true;
+                var states = this.states;
+                var length = states.length;
+                for (var i = 0; i < length; i++) {
+                    states[i].initialize(this, stage);
+                }
+            };
+            return StateClient;
+        }());
+        sys.StateClient = StateClient;
+        __reflect(StateClient.prototype, "eui.sys.StateClient");
+        /**
+         * @private
+         */
+        var StateValues = (function () {
+            function StateValues() {
+                /**
+                 * @private
+                 */
+                this.intialized = false;
+                /**
+                 * @private
+                 */
+                this.statesMap = {};
+                /**
+                 * @private
+                 */
+                this.states = [];
+                /**
+                 * @private
+                 */
+                this.oldState = null;
+                /**
+                 * @private
+                 */
+                this.explicitState = null;
+                /**
+                 * @private
+                 */
+                this.currentState = null;
+                /**
+                 * @private
+                 */
+                this.parent = null;
+                /**
+                 * @private
+                 */
+                this.stateIsDirty = false;
+            }
+            return StateValues;
+        }());
+        sys.StateValues = StateValues;
+        __reflect(StateValues.prototype, "eui.sys.StateValues");
+    })(sys = eui.sys || (eui.sys = {}));
+})(eui || (eui = {}));
+//////////////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright (c) 2014-present, Egret Technology.
+//  All rights reserved.
+//  Redistribution and use in source and binary forms, with or without
+//  modification, are permitted provided that the following conditions are met:
+//
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above copyright
+//       notice, this list of conditions and the following disclaimer in the
+//       documentation and/or other materials provided with the distribution.
+//     * Neither the name of the Egret nor the
+//       names of its contributors may be used to endorse or promote products
+//       derived from this software without specific prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY EGRET AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
+//  OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+//  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL EGRET AND CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+//  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+//  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;LOSS OF USE, DATA,
+//  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+//  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+//  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+//////////////////////////////////////////////////////////////////////////////////////
 /// <reference path="Validator.ts" />
 var eui;
+(function (eui) {
+    function getAssets(source, callback, thisObject) {
+        var adapter = egret.getImplementation("eui.IAssetAdapter");
+        if (!adapter) {
+            adapter = new eui.DefaultAssetAdapter();
+        }
+        adapter.getAsset(source, function (content) {
+            callback.call(thisObject, content);
+        }, this);
+    }
+    eui.getAssets = getAssets;
+    function getTheme(source, callback) {
+        var adapter = egret.getImplementation("eui.IThemeAdapter");
+        if (!adapter) {
+            adapter = new eui.DefaultThemeAdapter();
+        }
+        adapter.getTheme(source, function (data) {
+            callback(data);
+        }, function (e) { console.log(e); }, this);
+    }
+    eui.getTheme = getTheme;
+})(eui || (eui = {}));
 (function (eui) {
     var sys;
     (function (sys) {
@@ -1243,8 +1549,8 @@ var eui;
             /**
              * @private
              */
-            UIComponentImpl.prototype.$invalidateMatrix = function () {
-                this.$super.$invalidateMatrix.call(this);
+            UIComponentImpl.prototype.$updateUseTransform = function () {
+                this.$super.$updateUseTransform.call(this);
                 this.invalidateParentLayout();
             };
             /**
@@ -1343,8 +1649,8 @@ var eui;
                 if (recursive) {
                     var children = this.$children;
                     if (children) {
-                        var length_3 = children.length;
-                        for (var i = 0; i < length_3; i++) {
+                        var length_5 = children.length;
+                        for (var i = 0; i < length_5; i++) {
                             var child = children[i];
                             if (egret.is(child, UIComponentClass)) {
                                 child.validateSize(true);
@@ -1848,259 +2154,660 @@ var eui;
 //  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////////////
+/// <reference path="../states/State.ts" />
+/// <reference path="../core/UIComponent.ts" />
+/// <reference path="../utils/registerProperty.ts" />
 var eui;
 (function (eui) {
     /**
-     * The State class defines a view state, a particular view of a component.
+     * The Group class is defines the base class for layout component.
+     * If the contents of the sub items are too large to scroll to show, you can wrap a Scroller component outside the
+     * group (Give the instance of Group to <code>viewport</code> property of Scroller component).
+     * The scroller component can adds a scrolling touch operation for the Group.
      *
-     * For example, a product thumbnail could have two view states;
-     * a base view state with minimal information, and a rich view state with
-     * additional information.
-     *
+     * @see http://edn.egret.com/cn/article/index/id/608 Simple container
+     * @defaultProperty elementsContent
+     * @includeExample  extension/eui/components/GroupExample.ts
      * @version Egret 2.4
      * @version eui 1.0
      * @platform Web,Native
      * @language en_US
      */
     /**
-     * State 类定义视图状态，即组件的特定视图。
+     * Group 是自动布局的容器基类。如果包含的子项内容太大需要滚动显示，可以在在 Group 外部包裹一层 Scroller 组件
+     * (将 Group 实例赋值给 Scroller 组件的 viewport 属性)。Scroller 会为 Group 添加滚动的触摸操作功能，并显示垂直或水平的滚动条。
      *
-     * 例如，产品缩略图可以有两个视图状态，包含最少信息的基本视图状态和包含附加信息的丰富视图状态。
-     *
+     * @see http://edn.egret.com/cn/article/index/id/608 简单容器
+     * @defaultProperty elementsContent
+     * @includeExample  extension/eui/components/GroupExample.ts
      * @version Egret 2.4
      * @version eui 1.0
      * @platform Web,Native
      * @language zh_CN
      */
-    var State = (function (_super) {
-        __extends(State, _super);
+    var Group = (function (_super) {
+        __extends(Group, _super);
         /**
          * Constructor.
          *
-         * @param name The name of the view state.
-         * State names must be unique for a given component.
-         * This property must be set.
-         * @param overrides The overrides for this view state, as an Array of objects that implement
-         * the IOverride interface. These overrides are applied in order when the
-         * state is entered, and removed in reverse order when the state is exited.
-         *
          * @version Egret 2.4
          * @version eui 1.0
          * @platform Web,Native
          * @language en_US
          */
         /**
-         * 创建一个State实例。
-         *
-         * @param name 视图状态的名称。给定组件的状态名称必须唯一。必须设置此属性。
-         * @param overrides 该视图状态的覆盖，表现为实现 IOverride 接口的对象的数组。
-         * 这些覆盖在进入状态时按顺序应用，在退出状态时按相反的顺序删除。
+         * 构造函数。
          *
          * @version Egret 2.4
          * @version eui 1.0
          * @platform Web,Native
          * @language zh_CN
          */
-        function State(name, overrides) {
-            if (overrides === void 0) { overrides = []; }
+        function Group() {
             var _this = _super.call(this) || this;
-            _this.name = name;
-            _this.overrides = overrides;
+            /**
+             * @private
+             */
+            _this.$layout = null;
+            /**
+             * @private
+             */
+            _this.$stateValues = new eui.sys.StateValues();
+            _this.initializeUIValues();
+            _this.$Group = {
+                0: 0,
+                1: 0,
+                2: 0,
+                3: 0,
+                4: false,
+                5: false,
+            };
+            _this.$stateValues.parent = _this;
             return _this;
         }
+        Object.defineProperty(Group.prototype, "elementsContent", {
+            /**
+             * This property is Usually invoked in resolving an EXML for adding multiple children quickly.
+             *
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language en_US
+             */
+            /**
+             * 此属性通常在 EXML 的解析器中调用，便于快速添加多个子项。
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language zh_CN
+             */
+            set: function (value) {
+                if (value) {
+                    var length_6 = value.length;
+                    for (var i = 0; i < length_6; i++) {
+                        this.addChild(value[i]);
+                    }
+                }
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Group.prototype, "layout", {
+            /**
+             * The layout object for this container.
+             * This object is responsible for the measurement and layout of
+             * the UIcomponent in the container.
+             *
+             * @default eui.BasicLayout
+             *
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language en_US
+             */
+            /**
+             * 此容器的布局对象。
+             *
+             * s@default eui.BasicLayout
+             *
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language zh_CN
+             */
+            get: function () {
+                return this.$layout;
+            },
+            set: function (value) {
+                this.$setLayout(value);
+            },
+            enumerable: true,
+            configurable: true
+        });
         /**
-         * Initialize this state and all of its overrides.
+         * @private
+         *
+         * @param value
+         */
+        Group.prototype.$setLayout = function (value) {
+            if (this.$layout == value)
+                return false;
+            if (this.$layout) {
+                this.$layout.target = null;
+            }
+            this.$layout = value;
+            if (value) {
+                value.target = this;
+            }
+            this.invalidateSize();
+            this.invalidateDisplayList();
+            return true;
+        };
+        Object.defineProperty(Group.prototype, "contentWidth", {
+            /**
+             * @copy eui.IViewport#contentWidth
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             */
+            get: function () {
+                return this.$Group[0 /* contentWidth */];
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Group.prototype, "contentHeight", {
+            /**
+             * @copy eui.IViewport#contentHeight
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             */
+            get: function () {
+                return this.$Group[1 /* contentHeight */];
+            },
+            enumerable: true,
+            configurable: true
+        });
+        /**
+         *
+         * Sets the <code>contentWidth</code> and <code>contentHeight</code>
+         * properties.
+         *
+         * This method is intended for layout class developers who should
+         * call it from <code>updateDisplayList()</code> methods.
+         *
+         * @param width The new value of <code>contentWidth</code>.
+         * @param height The new value of <code>contentHeight</code>.
+         *
          * @version Egret 2.4
          * @version eui 1.0
          * @platform Web,Native
          * @language en_US
          */
         /**
-         * 初始化视图状态
+         *
+         * 设置 <code>contentWidth</code> 和 <code>contentHeight</code> 属性。
+         * 此方法由布局来调用，开发者应该在布局类的 <code>updateDisplayList()</code> 方法中对其进行调用。
+         *
+         * @param width <code>contentWidth</code> 的新值。
+         * @param height <code>contentHeight</code> 的新值。
+         *
          * @version Egret 2.4
          * @version eui 1.0
          * @platform Web,Native
          * @language zh_CN
          */
-        State.prototype.initialize = function (host, stage) {
-            var overrides = this.overrides;
-            var length = overrides.length;
-            for (var i = 0; i < length; i++) {
-                var addItems = overrides[i];
-                if (addItems instanceof eui.AddItems) {
-                    var target = host[addItems.target];
-                    if (target && target instanceof eui.Image && !target.$parent) {
-                        stage.addChild(target);
-                        stage.removeChild(target);
-                    }
+        Group.prototype.setContentSize = function (width, height) {
+            width = Math.ceil(+width || 0);
+            height = Math.ceil(+height || 0);
+            var values = this.$Group;
+            var wChange = (values[0 /* contentWidth */] !== width);
+            var hChange = (values[1 /* contentHeight */] !== height);
+            if (!wChange && !hChange) {
+                return;
+            }
+            values[0 /* contentWidth */] = width;
+            values[1 /* contentHeight */] = height;
+            if (wChange) {
+                eui.PropertyEvent.dispatchPropertyEvent(this, eui.PropertyEvent.PROPERTY_CHANGE, "contentWidth");
+            }
+            if (hChange) {
+                eui.PropertyEvent.dispatchPropertyEvent(this, eui.PropertyEvent.PROPERTY_CHANGE, "contentHeight");
+            }
+        };
+        Object.defineProperty(Group.prototype, "scrollEnabled", {
+            /**
+             * @copy eui.IViewport#scrollEnabled
+             *
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             */
+            get: function () {
+                return this.$Group[4 /* scrollEnabled */];
+            },
+            set: function (value) {
+                value = !!value;
+                var values = this.$Group;
+                if (value === values[4 /* scrollEnabled */])
+                    return;
+                values[4 /* scrollEnabled */] = value;
+                this.updateScrollRect();
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Group.prototype, "scrollH", {
+            /**
+             * @copy eui.IViewport#scrollH
+             *
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             */
+            get: function () {
+                return this.$Group[2 /* scrollH */];
+            },
+            set: function (value) {
+                value = +value || 0;
+                var values = this.$Group;
+                if (value === values[2 /* scrollH */])
+                    return;
+                values[2 /* scrollH */] = value;
+                if (this.updateScrollRect() && this.$layout) {
+                    this.$layout.scrollPositionChanged();
+                }
+                eui.PropertyEvent.dispatchPropertyEvent(this, eui.PropertyEvent.PROPERTY_CHANGE, "scrollH");
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Group.prototype, "scrollV", {
+            /**
+             * @copy eui.IViewport#scrollV
+             *
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             */
+            get: function () {
+                return this.$Group[3 /* scrollV */];
+            },
+            set: function (value) {
+                value = +value || 0;
+                var values = this.$Group;
+                if (value == values[3 /* scrollV */])
+                    return;
+                values[3 /* scrollV */] = value;
+                if (this.updateScrollRect() && this.$layout) {
+                    this.$layout.scrollPositionChanged();
+                }
+                eui.PropertyEvent.dispatchPropertyEvent(this, eui.PropertyEvent.PROPERTY_CHANGE, "scrollV");
+            },
+            enumerable: true,
+            configurable: true
+        });
+        /**
+         * @private
+         *
+         * @returns
+         */
+        Group.prototype.updateScrollRect = function () {
+            var values = this.$Group;
+            var hasClip = values[4 /* scrollEnabled */];
+            if (hasClip) {
+                var uiValues = this.$UIComponent;
+                this.scrollRect = egret.$TempRectangle.setTo(values[2 /* scrollH */], values[3 /* scrollV */], uiValues[10 /* width */], uiValues[11 /* height */]);
+            }
+            else if (this.$scrollRect) {
+                this.scrollRect = null;
+            }
+            return hasClip;
+        };
+        Object.defineProperty(Group.prototype, "numElements", {
+            /**
+             * The number of layout element in this container.
+             *
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language en_US
+             */
+            /**
+             * 布局元素子项的数量。
+             *
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language zh_CN
+             */
+            get: function () {
+                return this.$children.length;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        /**
+         * Returns the layout element at the specified index.
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 获取一个布局元素子项。
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        Group.prototype.getElementAt = function (index) {
+            return this.$children[index];
+        };
+        Group.prototype.getVirtualElementAt = function (index) {
+            return this.getElementAt(index);
+        };
+        /**
+         * Set the index range of the sub Visual element in container which support virtual layout.
+         * This method is invalid in container which do not support virtual layout.
+         * This method is usually invoked before layout. Override this method to release the invisible elements.
+         *
+         * @param startIndex the start index of sub visual elements（include）
+         * @param endIndex the end index of sub visual elements（include）
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 在支持虚拟布局的容器中，设置容器内可见的子元素索引范围。此方法在不支持虚拟布局的容器中无效。
+         * 通常在即将重新布局子项之前会被调用一次，容器覆盖此方法提前释放已经不可见的子元素。
+         *
+         * @param startIndex 可视元素起始索引（包括）
+         * @param endIndex 可视元素结束索引（包括）
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        Group.prototype.setVirtualElementIndicesInView = function (startIndex, endIndex) {
+        };
+        Object.defineProperty(Group.prototype, "touchThrough", {
+            /**
+             * When <code>true</code>, this property
+             * ensures that the entire bounds of the Group respond to
+             * touch events such as begin.
+             *
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language en_US
+             */
+            /**
+             * 触摸组件的背景透明区域是否可以穿透。设置为true表示可以穿透，反之透明区域也会响应触摸事件。默认 false。
+             *
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language zh_CN
+             */
+            get: function () {
+                return this.$Group[5 /* touchThrough */];
+            },
+            set: function (value) {
+                this.$Group[5 /* touchThrough */] = !!value;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        /**
+         * @private
+         */
+        Group.prototype.$hitTest = function (stageX, stageY) {
+            var target = _super.prototype.$hitTest.call(this, stageX, stageY);
+            if (target || this.$Group[5 /* touchThrough */]) {
+                return target;
+            }
+            //Bug: 当 group.sacleX or scaleY ==0 的时候，随便点击那里都点击成功
+            //虽然 super.$hitTest里面检测过一次 宽高大小，但是没有直接退出这个函数，所以要再判断一次;（width,height可以不判断）
+            if (!this.$visible || !this.touchEnabled || this.scaleX === 0 || this.scaleY === 0 || this.width === 0 || this.height === 0) {
+                return null;
+            }
+            var point = this.globalToLocal(stageX, stageY, egret.$TempPoint);
+            var values = this.$UIComponent;
+            var bounds = egret.$TempRectangle.setTo(0, 0, values[10 /* width */], values[11 /* height */]);
+            var scrollRect = this.$scrollRect;
+            if (scrollRect) {
+                bounds.x = scrollRect.x;
+                bounds.y = scrollRect.y;
+            }
+            if (bounds.contains(point.x, point.y)) {
+                return this;
+            }
+            return null;
+        };
+        /**
+         * @copy eui.Component#invalidateState()
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         */
+        Group.prototype.invalidateState = function () {
+            var values = this.$stateValues;
+            if (values.stateIsDirty) {
+                return;
+            }
+            values.stateIsDirty = true;
+            this.invalidateProperties();
+        };
+        /**
+         * @copy eui.Component#getCurrentState()
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         */
+        Group.prototype.getCurrentState = function () {
+            return "";
+        };
+        /**
+         * @copy eui.Component#createChildren()
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         */
+        Group.prototype.createChildren = function () {
+            if (!this.$layout) {
+                this.$setLayout(new eui.BasicLayout());
+            }
+            this.initializeStates(this.$stage);
+        };
+        /**
+         * @copy eui.Component#childrenCreated()
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         */
+        Group.prototype.childrenCreated = function () {
+        };
+        /**
+         * @copy eui.Component#commitProperties()
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         */
+        Group.prototype.commitProperties = function () {
+            eui.sys.UIComponentImpl.prototype["commitProperties"].call(this);
+            var values = this.$stateValues;
+            if (values.stateIsDirty) {
+                values.stateIsDirty = false;
+                if (!values.explicitState) {
+                    values.currentState = this.getCurrentState();
+                    this.commitCurrentState();
                 }
             }
         };
-        return State;
-    }(egret.HashObject));
-    eui.State = State;
-    __reflect(State.prototype, "eui.State");
-})(eui || (eui = {}));
-(function (eui) {
-    var sys;
-    (function (sys) {
         /**
-         * @private
+         * @copy eui.Component#measure()
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
          */
-        var StateClient = (function () {
-            function StateClient() {
+        Group.prototype.measure = function () {
+            if (!this.$layout) {
+                this.setMeasuredSize(0, 0);
+                return;
             }
-            Object.defineProperty(StateClient.prototype, "states", {
-                /**
-                 * @private
-                 * 为此组件定义的视图状态。
-                 */
-                get: function () {
-                    return this.$stateValues.states;
-                },
-                set: function (value) {
-                    if (!value)
-                        value = [];
-                    var values = this.$stateValues;
-                    values.states = value;
-                    var statesMap = {};
-                    var length = value.length;
-                    for (var i = 0; i < length; i++) {
-                        var state = value[i];
-                        statesMap[state.name] = state;
-                    }
-                    values.statesMap = statesMap;
-                    if (values.parent) {
-                        this.commitCurrentState();
-                    }
-                },
-                enumerable: true,
-                configurable: true
-            });
-            Object.defineProperty(StateClient.prototype, "currentState", {
-                /**
-                 * @private
-                 * 组件的当前视图状态。将其设置为 "" 或 null 可将组件重置回其基本状态。
-                 */
-                get: function () {
-                    return this.$stateValues.currentState;
-                },
-                set: function (value) {
-                    var values = this.$stateValues;
-                    values.explicitState = value;
-                    values.currentState = value;
-                    this.commitCurrentState();
-                },
-                enumerable: true,
-                configurable: true
-            });
-            /**
-             * @private
-             * 应用当前的视图状态。子类覆盖此方法在视图状态发生改变时执行相应更新操作。
-             */
-            StateClient.prototype.commitCurrentState = function () {
-                var values = this.$stateValues;
-                if (!values.parent) {
-                    return;
-                }
-                var destination = values.statesMap[values.currentState];
-                if (!destination) {
-                    if (values.states.length > 0) {
-                        values.currentState = values.states[0].name;
-                    }
-                    else {
-                        return;
-                    }
-                }
-                if (values.oldState == values.currentState) {
-                    return;
-                }
-                var parent = values.parent;
-                var state = values.statesMap[values.oldState];
-                if (state) {
-                    var overrides = state.overrides;
-                    var length_4 = overrides.length;
-                    for (var i = 0; i < length_4; i++) {
-                        overrides[i].remove(this, parent);
-                    }
-                }
-                values.oldState = values.currentState;
-                state = values.statesMap[values.currentState];
-                if (state) {
-                    var overrides = state.overrides;
-                    var length_5 = overrides.length;
-                    for (var i = 0; i < length_5; i++) {
-                        overrides[i].apply(this, parent);
-                    }
-                }
-            };
-            /**
-             * @private
-             * 返回是否含有指定名称的视图状态
-             * @param stateName 要检查的视图状态名称
-             */
-            StateClient.prototype.hasState = function (stateName) {
-                return !!this.$stateValues.statesMap[stateName];
-            };
-            /**
-             * @private
-             * 初始化所有视图状态
-             */
-            StateClient.prototype.initializeStates = function (stage) {
-                this.$stateValues.intialized = true;
-                var states = this.states;
-                var length = states.length;
-                for (var i = 0; i < length; i++) {
-                    states[i].initialize(this, stage);
-                }
-            };
-            return StateClient;
-        }());
-        sys.StateClient = StateClient;
-        __reflect(StateClient.prototype, "eui.sys.StateClient");
+            this.$layout.measure();
+        };
         /**
-         * @private
+         * @copy eui.Component#updateDisplayList()
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
          */
-        var StateValues = (function () {
-            function StateValues() {
-                /**
-                 * @private
-                 */
-                this.intialized = false;
-                /**
-                 * @private
-                 */
-                this.statesMap = {};
-                /**
-                 * @private
-                 */
-                this.states = [];
-                /**
-                 * @private
-                 */
-                this.oldState = null;
-                /**
-                 * @private
-                 */
-                this.explicitState = null;
-                /**
-                 * @private
-                 */
-                this.currentState = null;
-                /**
-                 * @private
-                 */
-                this.parent = null;
-                /**
-                 * @private
-                 */
-                this.stateIsDirty = false;
+        Group.prototype.updateDisplayList = function (unscaledWidth, unscaledHeight) {
+            if (this.$layout) {
+                this.$layout.updateDisplayList(unscaledWidth, unscaledHeight);
             }
-            return StateValues;
-        }());
-        sys.StateValues = StateValues;
-        __reflect(StateValues.prototype, "eui.sys.StateValues");
-    })(sys = eui.sys || (eui.sys = {}));
+            this.updateScrollRect();
+        };
+        /**
+         * @copy eui.Component#invalidateParentLayout()
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         */
+        Group.prototype.invalidateParentLayout = function () {
+        };
+        /**
+         * @inheritDoc
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         */
+        Group.prototype.setMeasuredSize = function (width, height) {
+        };
+        /**
+         * @inheritDoc
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         */
+        Group.prototype.invalidateProperties = function () {
+        };
+        /**
+         * @inheritDoc
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         */
+        Group.prototype.validateProperties = function () {
+        };
+        /**
+         * @inheritDoc
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         */
+        Group.prototype.invalidateSize = function () {
+        };
+        /**
+         * @inheritDoc
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         */
+        Group.prototype.validateSize = function (recursive) {
+        };
+        /**
+         * @inheritDoc
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         */
+        Group.prototype.invalidateDisplayList = function () {
+        };
+        /**
+         * @inheritDoc
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         */
+        Group.prototype.validateDisplayList = function () {
+        };
+        /**
+         * @inheritDoc
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         */
+        Group.prototype.validateNow = function () {
+        };
+        /**
+         * @inheritDoc
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         */
+        Group.prototype.setLayoutBoundsSize = function (layoutWidth, layoutHeight) {
+        };
+        /**
+         * @inheritDoc
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         */
+        Group.prototype.setLayoutBoundsPosition = function (x, y) {
+        };
+        /**
+         * @inheritDoc
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         */
+        Group.prototype.getLayoutBounds = function (bounds) {
+        };
+        /**
+         * @inheritDoc
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         */
+        Group.prototype.getPreferredBounds = function (bounds) {
+        };
+        return Group;
+    }(egret.DisplayObjectContainer));
+    eui.Group = Group;
+    __reflect(Group.prototype, "eui.Group", ["eui.IViewport", "eui.UIComponent", "egret.DisplayObject"]);
+    eui.sys.implementUIComponent(Group, egret.DisplayObjectContainer, true);
+    eui.sys.mixin(Group, eui.sys.StateClient);
+    eui.registerProperty(Group, "elementsContent", "Array", true);
+    eui.registerProperty(Group, "states", "State[]");
 })(eui || (eui = {}));
 //////////////////////////////////////////////////////////////////////////////////////
 //
@@ -2434,8 +3141,8 @@ var eui;
             var oldSkin = values[8 /* skin */];
             if (oldSkin) {
                 var skinParts = oldSkin.skinParts;
-                var length_6 = skinParts.length;
-                for (var i = 0; i < length_6; i++) {
+                var length_7 = skinParts.length;
+                for (var i = 0; i < length_7; i++) {
                     var partName = skinParts[i];
                     if (this[partName]) {
                         this.setSkinPart(partName, null);
@@ -2443,8 +3150,8 @@ var eui;
                 }
                 var children = oldSkin.$elementsContent;
                 if (children) {
-                    length_6 = children.length;
-                    for (var i = 0; i < length_6; i++) {
+                    length_7 = children.length;
+                    for (var i = 0; i < length_7; i++) {
                         var child = children[i];
                         if (child.$parent == this) {
                             this.removeChild(child);
@@ -2456,8 +3163,8 @@ var eui;
             values[8 /* skin */] = skin;
             if (skin) {
                 var skinParts = skin.skinParts;
-                var length_7 = skinParts.length;
-                for (var i = 0; i < length_7; i++) {
+                var length_8 = skinParts.length;
+                for (var i = 0; i < length_8; i++) {
                     var partName = skinParts[i];
                     var instance = skin[partName];
                     if (instance) {
@@ -2593,10 +3300,7 @@ var eui;
             var values = this.$Component;
             values[7 /* explicitTouchEnabled */] = value;
             if (values[3 /* enabled */]) {
-                return _super.prototype.$setTouchEnabled.call(this, value);
-            }
-            else {
-                return true;
+                _super.prototype.$setTouchEnabled.call(this, value);
             }
         };
         Object.defineProperty(Component.prototype, "enabled", {
@@ -3000,983 +3704,6 @@ var eui;
     __reflect(Component.prototype, "eui.Component", ["eui.UIComponent", "egret.DisplayObject"]);
     eui.registerProperty(Component, "skinName", "Class");
     eui.sys.implementUIComponent(Component, egret.DisplayObjectContainer, true);
-})(eui || (eui = {}));
-//////////////////////////////////////////////////////////////////////////////////////
-//
-//  Copyright (c) 2014-present, Egret Technology.
-//  All rights reserved.
-//  Redistribution and use in source and binary forms, with or without
-//  modification, are permitted provided that the following conditions are met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//     * Neither the name of the Egret nor the
-//       names of its contributors may be used to endorse or promote products
-//       derived from this software without specific prior written permission.
-//
-//  THIS SOFTWARE IS PROVIDED BY EGRET AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
-//  OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-//  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-//  IN NO EVENT SHALL EGRET AND CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-//  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-//  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;LOSS OF USE, DATA,
-//  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-//  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-//  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-//////////////////////////////////////////////////////////////////////////////////////
-/// <reference path="../states/State.ts" />
-/// <reference path="../core/UIComponent.ts" />
-/// <reference path="../utils/registerProperty.ts" />
-var eui;
-(function (eui) {
-    /**
-     * The Group class is defines the base class for layout component.
-     * If the contents of the sub items are too large to scroll to show, you can wrap a Scroller component outside the
-     * group (Give the instance of Group to <code>viewport</code> property of Scroller component).
-     * The scroller component can adds a scrolling touch operation for the Group.
-     *
-     * @see http://edn.egret.com/cn/article/index/id/608 Simple container
-     * @defaultProperty elementsContent
-     * @includeExample  extension/eui/components/GroupExample.ts
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * Group 是自动布局的容器基类。如果包含的子项内容太大需要滚动显示，可以在在 Group 外部包裹一层 Scroller 组件
-     * (将 Group 实例赋值给 Scroller 组件的 viewport 属性)。Scroller 会为 Group 添加滚动的触摸操作功能，并显示垂直或水平的滚动条。
-     *
-     * @see http://edn.egret.com/cn/article/index/id/608 简单容器
-     * @defaultProperty elementsContent
-     * @includeExample  extension/eui/components/GroupExample.ts
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    var Group = (function (_super) {
-        __extends(Group, _super);
-        /**
-         * Constructor.
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 构造函数。
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        function Group() {
-            var _this = _super.call(this) || this;
-            /**
-             * @private
-             */
-            _this.$layout = null;
-            /**
-             * @private
-             */
-            _this.$stateValues = new eui.sys.StateValues();
-            _this.initializeUIValues();
-            _this.$Group = {
-                0: 0,
-                1: 0,
-                2: 0,
-                3: 0,
-                4: false,
-                5: false,
-            };
-            _this.$stateValues.parent = _this;
-            return _this;
-        }
-        Object.defineProperty(Group.prototype, "elementsContent", {
-            /**
-             * This property is Usually invoked in resolving an EXML for adding multiple children quickly.
-             *
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * 此属性通常在 EXML 的解析器中调用，便于快速添加多个子项。
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            set: function (value) {
-                if (value) {
-                    var length_8 = value.length;
-                    for (var i = 0; i < length_8; i++) {
-                        this.addChild(value[i]);
-                    }
-                }
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Group.prototype, "layout", {
-            /**
-             * The layout object for this container.
-             * This object is responsible for the measurement and layout of
-             * the UIcomponent in the container.
-             *
-             * @default eui.BasicLayout
-             *
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * 此容器的布局对象。
-             *
-             * s@default eui.BasicLayout
-             *
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            get: function () {
-                return this.$layout;
-            },
-            set: function (value) {
-                this.$setLayout(value);
-            },
-            enumerable: true,
-            configurable: true
-        });
-        /**
-         * @private
-         *
-         * @param value
-         */
-        Group.prototype.$setLayout = function (value) {
-            if (this.$layout == value)
-                return false;
-            if (this.$layout) {
-                this.$layout.target = null;
-            }
-            this.$layout = value;
-            if (value) {
-                value.target = this;
-            }
-            this.invalidateSize();
-            this.invalidateDisplayList();
-            return true;
-        };
-        Object.defineProperty(Group.prototype, "contentWidth", {
-            /**
-             * @copy eui.IViewport#contentWidth
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             */
-            get: function () {
-                return this.$Group[0 /* contentWidth */];
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Group.prototype, "contentHeight", {
-            /**
-             * @copy eui.IViewport#contentHeight
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             */
-            get: function () {
-                return this.$Group[1 /* contentHeight */];
-            },
-            enumerable: true,
-            configurable: true
-        });
-        /**
-         *
-         * Sets the <code>contentWidth</code> and <code>contentHeight</code>
-         * properties.
-         *
-         * This method is intended for layout class developers who should
-         * call it from <code>updateDisplayList()</code> methods.
-         *
-         * @param width The new value of <code>contentWidth</code>.
-         * @param height The new value of <code>contentHeight</code>.
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         *
-         * 设置 <code>contentWidth</code> 和 <code>contentHeight</code> 属性。
-         * 此方法由布局来调用，开发者应该在布局类的 <code>updateDisplayList()</code> 方法中对其进行调用。
-         *
-         * @param width <code>contentWidth</code> 的新值。
-         * @param height <code>contentHeight</code> 的新值。
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        Group.prototype.setContentSize = function (width, height) {
-            width = Math.ceil(+width || 0);
-            height = Math.ceil(+height || 0);
-            var values = this.$Group;
-            var wChange = (values[0 /* contentWidth */] !== width);
-            var hChange = (values[1 /* contentHeight */] !== height);
-            if (!wChange && !hChange) {
-                return;
-            }
-            values[0 /* contentWidth */] = width;
-            values[1 /* contentHeight */] = height;
-            if (wChange) {
-                eui.PropertyEvent.dispatchPropertyEvent(this, eui.PropertyEvent.PROPERTY_CHANGE, "contentWidth");
-            }
-            if (hChange) {
-                eui.PropertyEvent.dispatchPropertyEvent(this, eui.PropertyEvent.PROPERTY_CHANGE, "contentHeight");
-            }
-        };
-        Object.defineProperty(Group.prototype, "scrollEnabled", {
-            /**
-             * @copy eui.IViewport#scrollEnabled
-             *
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             */
-            get: function () {
-                return this.$Group[4 /* scrollEnabled */];
-            },
-            set: function (value) {
-                value = !!value;
-                var values = this.$Group;
-                if (value === values[4 /* scrollEnabled */])
-                    return;
-                values[4 /* scrollEnabled */] = value;
-                this.updateScrollRect();
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Group.prototype, "scrollH", {
-            /**
-             * @copy eui.IViewport#scrollH
-             *
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             */
-            get: function () {
-                return this.$Group[2 /* scrollH */];
-            },
-            set: function (value) {
-                value = +value || 0;
-                var values = this.$Group;
-                if (value === values[2 /* scrollH */])
-                    return;
-                values[2 /* scrollH */] = value;
-                if (this.updateScrollRect() && this.$layout) {
-                    this.$layout.scrollPositionChanged();
-                }
-                eui.PropertyEvent.dispatchPropertyEvent(this, eui.PropertyEvent.PROPERTY_CHANGE, "scrollH");
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Group.prototype, "scrollV", {
-            /**
-             * @copy eui.IViewport#scrollV
-             *
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             */
-            get: function () {
-                return this.$Group[3 /* scrollV */];
-            },
-            set: function (value) {
-                value = +value || 0;
-                var values = this.$Group;
-                if (value == values[3 /* scrollV */])
-                    return;
-                values[3 /* scrollV */] = value;
-                if (this.updateScrollRect() && this.$layout) {
-                    this.$layout.scrollPositionChanged();
-                }
-                eui.PropertyEvent.dispatchPropertyEvent(this, eui.PropertyEvent.PROPERTY_CHANGE, "scrollV");
-            },
-            enumerable: true,
-            configurable: true
-        });
-        /**
-         * @private
-         *
-         * @returns
-         */
-        Group.prototype.updateScrollRect = function () {
-            var values = this.$Group;
-            var hasClip = values[4 /* scrollEnabled */];
-            if (hasClip) {
-                var uiValues = this.$UIComponent;
-                this.scrollRect = egret.$TempRectangle.setTo(values[2 /* scrollH */], values[3 /* scrollV */], uiValues[10 /* width */], uiValues[11 /* height */]);
-            }
-            else if (this.$scrollRect) {
-                this.scrollRect = null;
-            }
-            return hasClip;
-        };
-        Object.defineProperty(Group.prototype, "numElements", {
-            /**
-             * The number of layout element in this container.
-             *
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * 布局元素子项的数量。
-             *
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            get: function () {
-                return this.$children.length;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        /**
-         * Returns the layout element at the specified index.
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 获取一个布局元素子项。
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        Group.prototype.getElementAt = function (index) {
-            return this.$children[index];
-        };
-        Group.prototype.getVirtualElementAt = function (index) {
-            return this.getElementAt(index);
-        };
-        /**
-         * Set the index range of the sub Visual element in container which support virtual layout.
-         * This method is invalid in container which do not support virtual layout.
-         * This method is usually invoked before layout. Override this method to release the invisible elements.
-         *
-         * @param startIndex the start index of sub visual elements（include）
-         * @param endIndex the end index of sub visual elements（include）
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 在支持虚拟布局的容器中，设置容器内可见的子元素索引范围。此方法在不支持虚拟布局的容器中无效。
-         * 通常在即将重新布局子项之前会被调用一次，容器覆盖此方法提前释放已经不可见的子元素。
-         *
-         * @param startIndex 可视元素起始索引（包括）
-         * @param endIndex 可视元素结束索引（包括）
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        Group.prototype.setVirtualElementIndicesInView = function (startIndex, endIndex) {
-        };
-        Object.defineProperty(Group.prototype, "touchThrough", {
-            /**
-             * When <code>true</code>, this property
-             * ensures that the entire bounds of the Group respond to
-             * touch events such as begin.
-             *
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * 触摸组件的背景透明区域是否可以穿透。设置为true表示可以穿透，反之透明区域也会响应触摸事件。默认 false。
-             *
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            get: function () {
-                return this.$Group[5 /* touchThrough */];
-            },
-            set: function (value) {
-                this.$Group[5 /* touchThrough */] = !!value;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        /**
-         * @private
-         */
-        Group.prototype.$hitTest = function (stageX, stageY) {
-            var target = _super.prototype.$hitTest.call(this, stageX, stageY);
-            if (target || this.$Group[5 /* touchThrough */]) {
-                return target;
-            }
-            if (!this.$visible || !this.touchEnabled) {
-                return null;
-            }
-            var point = this.globalToLocal(stageX, stageY, egret.$TempPoint);
-            var values = this.$UIComponent;
-            var bounds = egret.$TempRectangle.setTo(0, 0, values[10 /* width */], values[11 /* height */]);
-            var scrollRect = this.$scrollRect;
-            if (scrollRect) {
-                bounds.x = scrollRect.x;
-                bounds.y = scrollRect.y;
-            }
-            if (bounds.contains(point.x, point.y)) {
-                return this;
-            }
-            return null;
-        };
-        /**
-         * @copy eui.Component#invalidateState()
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        Group.prototype.invalidateState = function () {
-            var values = this.$stateValues;
-            if (values.stateIsDirty) {
-                return;
-            }
-            values.stateIsDirty = true;
-            this.invalidateProperties();
-        };
-        /**
-         * @copy eui.Component#getCurrentState()
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        Group.prototype.getCurrentState = function () {
-            return "";
-        };
-        /**
-         * @copy eui.Component#createChildren()
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        Group.prototype.createChildren = function () {
-            if (!this.$layout) {
-                this.$setLayout(new eui.BasicLayout());
-            }
-            this.initializeStates(this.$stage);
-        };
-        /**
-         * @copy eui.Component#childrenCreated()
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        Group.prototype.childrenCreated = function () {
-        };
-        /**
-         * @copy eui.Component#commitProperties()
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        Group.prototype.commitProperties = function () {
-            eui.sys.UIComponentImpl.prototype["commitProperties"].call(this);
-            var values = this.$stateValues;
-            if (values.stateIsDirty) {
-                values.stateIsDirty = false;
-                if (!values.explicitState) {
-                    values.currentState = this.getCurrentState();
-                    this.commitCurrentState();
-                }
-            }
-        };
-        /**
-         * @copy eui.Component#measure()
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        Group.prototype.measure = function () {
-            if (!this.$layout) {
-                this.setMeasuredSize(0, 0);
-                return;
-            }
-            this.$layout.measure();
-        };
-        /**
-         * @copy eui.Component#updateDisplayList()
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        Group.prototype.updateDisplayList = function (unscaledWidth, unscaledHeight) {
-            if (this.$layout) {
-                this.$layout.updateDisplayList(unscaledWidth, unscaledHeight);
-            }
-            this.updateScrollRect();
-        };
-        /**
-         * @copy eui.Component#invalidateParentLayout()
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        Group.prototype.invalidateParentLayout = function () {
-        };
-        /**
-         * @inheritDoc
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        Group.prototype.setMeasuredSize = function (width, height) {
-        };
-        /**
-         * @inheritDoc
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        Group.prototype.invalidateProperties = function () {
-        };
-        /**
-         * @inheritDoc
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        Group.prototype.validateProperties = function () {
-        };
-        /**
-         * @inheritDoc
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        Group.prototype.invalidateSize = function () {
-        };
-        /**
-         * @inheritDoc
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        Group.prototype.validateSize = function (recursive) {
-        };
-        /**
-         * @inheritDoc
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        Group.prototype.invalidateDisplayList = function () {
-        };
-        /**
-         * @inheritDoc
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        Group.prototype.validateDisplayList = function () {
-        };
-        /**
-         * @inheritDoc
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        Group.prototype.validateNow = function () {
-        };
-        /**
-         * @inheritDoc
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        Group.prototype.setLayoutBoundsSize = function (layoutWidth, layoutHeight) {
-        };
-        /**
-         * @inheritDoc
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        Group.prototype.setLayoutBoundsPosition = function (x, y) {
-        };
-        /**
-         * @inheritDoc
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        Group.prototype.getLayoutBounds = function (bounds) {
-        };
-        /**
-         * @inheritDoc
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        Group.prototype.getPreferredBounds = function (bounds) {
-        };
-        return Group;
-    }(egret.DisplayObjectContainer));
-    eui.Group = Group;
-    __reflect(Group.prototype, "eui.Group", ["eui.IViewport", "eui.UIComponent", "egret.DisplayObject"]);
-    eui.sys.implementUIComponent(Group, egret.DisplayObjectContainer, true);
-    eui.sys.mixin(Group, eui.sys.StateClient);
-    eui.registerProperty(Group, "elementsContent", "Array", true);
-    eui.registerProperty(Group, "states", "State[]");
-})(eui || (eui = {}));
-//////////////////////////////////////////////////////////////////////////////////////
-//
-//  Copyright (c) 2014-present, Egret Technology.
-//  All rights reserved.
-//  Redistribution and use in source and binary forms, with or without
-//  modification, are permitted provided that the following conditions are met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//     * Neither the name of the Egret nor the
-//       names of its contributors may be used to endorse or promote products
-//       derived from this software without specific prior written permission.
-//
-//  THIS SOFTWARE IS PROVIDED BY EGRET AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
-//  OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-//  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-//  IN NO EVENT SHALL EGRET AND CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-//  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-//  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;LOSS OF USE, DATA,
-//  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-//  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-//  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-//////////////////////////////////////////////////////////////////////////////////////
-var eui;
-(function (eui) {
-    /**
-     * The Button component is a commonly used rectangular button.
-     * The Button component looks like it can be pressed.
-     * The default skin has a text label and a icon display object.
-     *
-     * @event egret.TouchEvent.TOUCH_CANCEL canceled the touch
-     *
-     * @state up Button up state
-     * @state down Button down state
-     * @state disabled Button disabled state
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @includeExample extension/eui/components/ButtonExample.ts
-     * @language en_US
-     */
-    /**
-     * Button 组件是常用的矩形按钮。Button 组件看起来可以按压。默认外观具有一个文本标签和图标显示对象。
-     *
-     * @event egret.TouchEvent.TOUCH_CANCEL 取消触摸事件
-     *
-     * @state up 按钮弹起状态
-     * @state down 按钮按下状态
-     * @state disabled 按钮禁用状态
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @includeExample extension/eui/components/ButtonExample.ts
-     * @language zh_CN
-     */
-    var Button = (function (_super) {
-        __extends(Button, _super);
-        /**
-         * Constructor.
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 创建一个按钮实例
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        function Button() {
-            var _this = _super.call(this) || this;
-            /**
-             * [SkinPart] A skin part that defines the label of the button.
-             * @skinPart
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * [SkinPart] 按钮上的文本标签。
-             * @skinPart
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            _this.labelDisplay = null;
-            /**
-             * @private
-             */
-            _this._label = "";
-            /**
-             * [SkinPart] A skin part that defines an optional icon for the button.
-             * @skinPart
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * [SkinPart] 按钮上的图标显示对象。
-             * @skinPart
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            _this.iconDisplay = null;
-            /**
-             * @private
-             */
-            _this._icon = null;
-            /**
-             * @private
-             * 指示第一次分派 TouchEvent.TOUCH_BEGIN 时，触摸点是否在按钮上。
-             */
-            _this.touchCaptured = false;
-            _this.touchChildren = false;
-            _this.addEventListener(egret.TouchEvent.TOUCH_BEGIN, _this.onTouchBegin, _this);
-            return _this;
-        }
-        Object.defineProperty(Button.prototype, "label", {
-            /**
-             * Text to appear on the Button control.
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * 要在按钮上显示的文本。
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            get: function () {
-                return this._label;
-            },
-            set: function (value) {
-                this._label = value;
-                if (this.labelDisplay) {
-                    this.labelDisplay.text = value;
-                }
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Button.prototype, "icon", {
-            /**
-             * Icon to appear on the Button control.
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * 要在按钮上显示的图标数据
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            get: function () {
-                return this._icon;
-            },
-            set: function (value) {
-                this._icon = value;
-                if (this.iconDisplay) {
-                    this.iconDisplay.source = value;
-                }
-            },
-            enumerable: true,
-            configurable: true
-        });
-        /**
-         * This method handles the touchCancle events
-         * @param  The <code>egret.TouchEvent</code> object.
-         * @version Egret 3.0.1
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 解除触碰事件处理。
-         * @param event 事件 <code>egret.TouchEvent</code> 的对象。
-         * @version Egret 3.0.1
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        Button.prototype.onTouchCancle = function (event) {
-            var stage = event.$currentTarget;
-            stage.removeEventListener(egret.TouchEvent.TOUCH_CANCEL, this.onTouchCancle, this);
-            stage.removeEventListener(egret.TouchEvent.TOUCH_END, this.onStageTouchEnd, this);
-            this.touchCaptured = false;
-            this.invalidateState();
-        };
-        /**
-         * This method handles the touch events
-         * @param  The <code>egret.TouchEvent</code> object.
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 触碰事件处理。
-         * @param event 事件 <code>egret.TouchEvent</code> 的对象。
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        Button.prototype.onTouchBegin = function (event) {
-            this.$stage.addEventListener(egret.TouchEvent.TOUCH_CANCEL, this.onTouchCancle, this);
-            this.$stage.addEventListener(egret.TouchEvent.TOUCH_END, this.onStageTouchEnd, this);
-            this.touchCaptured = true;
-            this.invalidateState();
-            event.updateAfterEvent();
-        };
-        /**
-         * @private
-         * 舞台上触摸弹起事件
-         */
-        Button.prototype.onStageTouchEnd = function (event) {
-            var stage = event.$currentTarget;
-            stage.removeEventListener(egret.TouchEvent.TOUCH_CANCEL, this.onTouchCancle, this);
-            stage.removeEventListener(egret.TouchEvent.TOUCH_END, this.onStageTouchEnd, this);
-            if (this.contains(event.target)) {
-                this.buttonReleased();
-            }
-            this.touchCaptured = false;
-            this.invalidateState();
-        };
-        /**
-         * @inheritDoc
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        Button.prototype.getCurrentState = function () {
-            if (!this.enabled)
-                return "disabled";
-            if (this.touchCaptured)
-                return "down";
-            return "up";
-        };
-        /**
-         * @inheritDoc
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        Button.prototype.partAdded = function (partName, instance) {
-            if (instance === this.labelDisplay) {
-                this.labelDisplay.text = this._label;
-            }
-            else if (instance == this.iconDisplay) {
-                this.iconDisplay.source = this._icon;
-            }
-        };
-        /**
-         * This method is called when handling a <code>egret.TouchEvent.TOUCH_END</code> event
-         * when the user touches on the button. It is only called when the button
-         * is the target and when <code>touchCaptured</code> is <code>true</code>.
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 当在用户单击按钮之后处理 <code>egret.TouchEvent.TOUCH_END</code> 事件时，将调用此方法。
-         * 仅当以按钮为目标，并且 <code>touchCaptured</code> 为 <code>true</code> 时，才会调用此方法。
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        Button.prototype.buttonReleased = function () {
-        };
-        return Button;
-    }(eui.Component));
-    eui.Button = Button;
-    __reflect(Button.prototype, "eui.Button");
 })(eui || (eui = {}));
 //////////////////////////////////////////////////////////////////////////////////////
 //
@@ -4824,7 +4551,7 @@ var eui;
          */
         DataGroup.prototype.measureRendererSize = function () {
             var values = this.$DataGroup;
-            if (!values[12 /* typicalItem */]) {
+            if (values[12 /* typicalItem */] == undefined) {
                 this.setTypicalLayoutRect(null);
                 return;
             }
@@ -5050,6 +4777,302 @@ var eui;
     eui.registerProperty(DataGroup, "itemRenderer", "Class");
     eui.registerProperty(DataGroup, "itemRendererSkinName", "Class");
     eui.registerProperty(DataGroup, "dataProvider", "eui.ICollection", true);
+})(eui || (eui = {}));
+//////////////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright (c) 2014-present, Egret Technology.
+//  All rights reserved.
+//  Redistribution and use in source and binary forms, with or without
+//  modification, are permitted provided that the following conditions are met:
+//
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above copyright
+//       notice, this list of conditions and the following disclaimer in the
+//       documentation and/or other materials provided with the distribution.
+//     * Neither the name of the Egret nor the
+//       names of its contributors may be used to endorse or promote products
+//       derived from this software without specific prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY EGRET AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
+//  OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+//  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL EGRET AND CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+//  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+//  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;LOSS OF USE, DATA,
+//  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+//  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+//  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+//////////////////////////////////////////////////////////////////////////////////////
+var eui;
+(function (eui) {
+    /**
+     * The Button component is a commonly used rectangular button.
+     * The Button component looks like it can be pressed.
+     * The default skin has a text label and a icon display object.
+     *
+     * @event egret.TouchEvent.TOUCH_CANCEL canceled the touch
+     *
+     * @state up Button up state
+     * @state down Button down state
+     * @state disabled Button disabled state
+     * @version Egret 2.4
+     * @version eui 1.0
+     * @platform Web,Native
+     * @includeExample extension/eui/components/ButtonExample.ts
+     * @language en_US
+     */
+    /**
+     * Button 组件是常用的矩形按钮。Button 组件看起来可以按压。默认外观具有一个文本标签和图标显示对象。
+     *
+     * @event egret.TouchEvent.TOUCH_CANCEL 取消触摸事件
+     *
+     * @state up 按钮弹起状态
+     * @state down 按钮按下状态
+     * @state disabled 按钮禁用状态
+     * @version Egret 2.4
+     * @version eui 1.0
+     * @platform Web,Native
+     * @includeExample extension/eui/components/ButtonExample.ts
+     * @language zh_CN
+     */
+    var Button = (function (_super) {
+        __extends(Button, _super);
+        /**
+         * Constructor.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 创建一个按钮实例
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        function Button() {
+            var _this = _super.call(this) || this;
+            /**
+             * [SkinPart] A skin part that defines the label of the button.
+             * @skinPart
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language en_US
+             */
+            /**
+             * [SkinPart] 按钮上的文本标签。
+             * @skinPart
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language zh_CN
+             */
+            _this.labelDisplay = null;
+            /**
+             * @private
+             */
+            _this._label = "";
+            /**
+             * [SkinPart] A skin part that defines an optional icon for the button.
+             * @skinPart
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language en_US
+             */
+            /**
+             * [SkinPart] 按钮上的图标显示对象。
+             * @skinPart
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language zh_CN
+             */
+            _this.iconDisplay = null;
+            /**
+             * @private
+             */
+            _this._icon = null;
+            /**
+             * @private
+             * 指示第一次分派 TouchEvent.TOUCH_BEGIN 时，触摸点是否在按钮上。
+             */
+            _this.touchCaptured = false;
+            _this.touchChildren = false;
+            _this.addEventListener(egret.TouchEvent.TOUCH_BEGIN, _this.onTouchBegin, _this);
+            return _this;
+        }
+        Object.defineProperty(Button.prototype, "label", {
+            /**
+             * Text to appear on the Button control.
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language en_US
+             */
+            /**
+             * 要在按钮上显示的文本。
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language zh_CN
+             */
+            get: function () {
+                return this._label;
+            },
+            set: function (value) {
+                this._label = value;
+                if (this.labelDisplay) {
+                    this.labelDisplay.text = value;
+                }
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Button.prototype, "icon", {
+            /**
+             * Icon to appear on the Button control.
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language en_US
+             */
+            /**
+             * 要在按钮上显示的图标数据
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language zh_CN
+             */
+            get: function () {
+                return this._icon;
+            },
+            set: function (value) {
+                this._icon = value;
+                if (this.iconDisplay) {
+                    this.iconDisplay.source = value;
+                }
+            },
+            enumerable: true,
+            configurable: true
+        });
+        /**
+         * This method handles the touchCancle events
+         * @param  The <code>egret.TouchEvent</code> object.
+         * @version Egret 3.0.1
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 解除触碰事件处理。
+         * @param event 事件 <code>egret.TouchEvent</code> 的对象。
+         * @version Egret 3.0.1
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        Button.prototype.onTouchCancle = function (event) {
+            var stage = event.$currentTarget;
+            stage.removeEventListener(egret.TouchEvent.TOUCH_CANCEL, this.onTouchCancle, this);
+            stage.removeEventListener(egret.TouchEvent.TOUCH_END, this.onStageTouchEnd, this);
+            this.touchCaptured = false;
+            this.invalidateState();
+        };
+        /**
+         * This method handles the touch events
+         * @param  The <code>egret.TouchEvent</code> object.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 触碰事件处理。
+         * @param event 事件 <code>egret.TouchEvent</code> 的对象。
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        Button.prototype.onTouchBegin = function (event) {
+            this.$stage.addEventListener(egret.TouchEvent.TOUCH_CANCEL, this.onTouchCancle, this);
+            this.$stage.addEventListener(egret.TouchEvent.TOUCH_END, this.onStageTouchEnd, this);
+            this.touchCaptured = true;
+            this.invalidateState();
+            event.updateAfterEvent();
+        };
+        /**
+         * @private
+         * 舞台上触摸弹起事件
+         */
+        Button.prototype.onStageTouchEnd = function (event) {
+            var stage = event.$currentTarget;
+            stage.removeEventListener(egret.TouchEvent.TOUCH_CANCEL, this.onTouchCancle, this);
+            stage.removeEventListener(egret.TouchEvent.TOUCH_END, this.onStageTouchEnd, this);
+            if (this.contains(event.target)) {
+                this.buttonReleased();
+            }
+            this.touchCaptured = false;
+            this.invalidateState();
+        };
+        /**
+         * @inheritDoc
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         */
+        Button.prototype.getCurrentState = function () {
+            if (!this.enabled)
+                return "disabled";
+            if (this.touchCaptured)
+                return "down";
+            return "up";
+        };
+        /**
+         * @inheritDoc
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         */
+        Button.prototype.partAdded = function (partName, instance) {
+            if (instance === this.labelDisplay) {
+                this.labelDisplay.text = this._label;
+            }
+            else if (instance == this.iconDisplay) {
+                this.iconDisplay.source = this._icon;
+            }
+        };
+        /**
+         * This method is called when handling a <code>egret.TouchEvent.TOUCH_END</code> event
+         * when the user touches on the button. It is only called when the button
+         * is the target and when <code>touchCaptured</code> is <code>true</code>.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 当在用户单击按钮之后处理 <code>egret.TouchEvent.TOUCH_END</code> 事件时，将调用此方法。
+         * 仅当以按钮为目标，并且 <code>touchCaptured</code> 为 <code>true</code> 时，才会调用此方法。
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        Button.prototype.buttonReleased = function () {
+        };
+        return Button;
+    }(eui.Component));
+    eui.Button = Button;
+    __reflect(Button.prototype, "eui.Button");
 })(eui || (eui = {}));
 //////////////////////////////////////////////////////////////////////////////////////
 //
@@ -6641,6 +6664,9 @@ var eui;
          * @language zh_CN
          */
         ListBase.prototype.onRendererTouchBegin = function (event) {
+            if (!this.$stage) {
+                return;
+            }
             var values = this.$ListBase;
             if (event.$isDefaultPrevented)
                 return;
@@ -6711,42 +6737,806 @@ var eui;
             stage.removeEventListener(egret.TouchEvent.TOUCH_END, this.stage_touchEndHandler, this);
             this.$ListBase[7 /* touchDownItemRenderer */] = null;
         };
+        /**
+         * Static constant representing the value "no selection".
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 未选中任何项时的索引值
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        ListBase.NO_SELECTION = -1;
+        /**
+         * Static constant representing no proposed selection.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 未设置缓存选中项的值
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        ListBase.NO_PROPOSED_SELECTION = -2;
         return ListBase;
     }(eui.DataGroup));
-    /**
-     * Static constant representing the value "no selection".
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 未选中任何项时的索引值
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    ListBase.NO_SELECTION = -1;
-    /**
-     * Static constant representing no proposed selection.
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 未设置缓存选中项的值
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    ListBase.NO_PROPOSED_SELECTION = -2;
     eui.ListBase = ListBase;
     __reflect(ListBase.prototype, "eui.ListBase");
     eui.registerBindable(ListBase.prototype, "selectedIndex");
     eui.registerBindable(ListBase.prototype, "selectedItem");
+})(eui || (eui = {}));
+//////////////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright (c) 2014-present, Egret Technology.
+//  All rights reserved.
+//  Redistribution and use in source and binary forms, with or without
+//  modification, are permitted provided that the following conditions are met:
+//
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above copyright
+//       notice, this list of conditions and the following disclaimer in the
+//       documentation and/or other materials provided with the distribution.
+//     * Neither the name of the Egret nor the
+//       names of its contributors may be used to endorse or promote products
+//       derived from this software without specific prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY EGRET AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
+//  OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+//  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL EGRET AND CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+//  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+//  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;LOSS OF USE, DATA,
+//  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+//  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+//  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+//////////////////////////////////////////////////////////////////////////////////////
+var eui;
+(function (eui) {
+    /**
+     * The ScrollBarBase class helps to position
+     * the portion of data that is displayed when there is too much data
+     * to fit in a display area.
+     * The ScrollBarBase class displays a pair of viewport and a thumb.
+     * viewport is a instance that implements IViewport.
+     *
+     * @see eui.IViewport
+     *
+     * @version Egret 2.4
+     * @version eui 1.0
+     * @platform Web,Native
+     * @language en_US
+     */
+    /**
+     * <code>ScrollBarBase</code> 滚动条基类，该类帮助在因数据太多而不能在显示区域完全显示时定位显示的数据部分。
+     * ScrollBarBase 类显示视区的一部分和一个指示滑块。
+     * 视区是一个IViewport接口实现的实例。
+     *
+     * @see eui.IViewport
+     *
+     * @version Egret 2.4
+     * @version eui 1.0
+     * @platform Web,Native
+     * @language zh_CN
+     */
+    var ScrollBarBase = (function (_super) {
+        __extends(ScrollBarBase, _super);
+        /**
+         * Constructor.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 创建一个ScrollBarBase实例。
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        function ScrollBarBase() {
+            var _this = _super.call(this) || this;
+            /**
+             * [SkinPart] Thumb display object.
+             * @skinPart
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language en_US
+             */
+            /**
+             * [SkinPart]滑块显示对象。
+             * @skinPart
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language zh_CN
+             */
+            _this.thumb = null;
+            /**
+             * @private
+             */
+            _this.$viewport = null;
+            /**
+             * Whether the scrollbar can be autohide.
+             * @version Egret 3.0.2
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language en_US
+             */
+            /**
+             * 是否自动隐藏 scrollbar
+             * @version Egret 3.0.2
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language zh_CN
+             */
+            _this.autoVisibility = true;
+            return _this;
+        }
+        Object.defineProperty(ScrollBarBase.prototype, "viewport", {
+            /**
+             * The viewport controlled by this scrollbar.
+             *
+             * If a viewport is specified, then changes to its actual size, content
+             * size, and scroll position cause the corresponding ScrollBarBase methods to
+             * run:
+             * <ul>
+             *     <li><code>onViewportResize()</code></li>
+             *     <li><code>onPropertyChanged()</code></li>
+             * </ul><p/>
+             *
+             * The VScrollBar and HScrollBar classes override these methods to keep their properties in
+             * sync with the viewport.
+             *
+             * @default null
+             * @see eui.VScrollBar
+             * @see eui.HScrollBar
+             *
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language en_US
+             */
+            /**
+             * 由该滚动条控制的视区。
+             *
+             * 如果指定了视区，则对其实际大小、内容大小和滚动位置的更改会导致运行相对应的 ScrollBarBase 方法：
+             * <ul>
+             *     <li><code>onViewportResize()</code></li>
+             *     <li><code>onPropertyChanged()</code></li>
+             * </ul><p/>
+             *
+             * VScrollBar 和 HScrollBar 类需要重写这些方法以保证属性与视区的同步。
+             *
+             * @default null
+             * @see eui.VScrollBar
+             * @see eui.HScrollBar
+             *
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language zh_CN
+             */
+            get: function () {
+                return this.$viewport;
+            },
+            set: function (value) {
+                if (value == this.$viewport) {
+                    return;
+                }
+                var viewport = this.$viewport;
+                if (viewport) {
+                    viewport.removeEventListener(eui.PropertyEvent.PROPERTY_CHANGE, this.onPropertyChanged, this);
+                    viewport.removeEventListener(egret.Event.RESIZE, this.onViewportResize, this);
+                }
+                this.$viewport = value;
+                if (value) {
+                    value.addEventListener(eui.PropertyEvent.PROPERTY_CHANGE, this.onPropertyChanged, this);
+                    value.addEventListener(egret.Event.RESIZE, this.onViewportResize, this);
+                }
+                this.invalidateDisplayList();
+            },
+            enumerable: true,
+            configurable: true
+        });
+        /**
+         * @private
+         *
+         * @param event
+         */
+        ScrollBarBase.prototype.onViewportResize = function (event) {
+            this.invalidateDisplayList();
+        };
+        /**
+         * Properties of viewport changed.
+         * @param event
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 视区属性发生改变。
+         * @param event
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        ScrollBarBase.prototype.onPropertyChanged = function (event) {
+        };
+        return ScrollBarBase;
+    }(eui.Component));
+    eui.ScrollBarBase = ScrollBarBase;
+    __reflect(ScrollBarBase.prototype, "eui.ScrollBarBase");
+})(eui || (eui = {}));
+//////////////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright (c) 2014-present, Egret Technology.
+//  All rights reserved.
+//  Redistribution and use in source and binary forms, with or without
+//  modification, are permitted provided that the following conditions are met:
+//
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above copyright
+//       notice, this list of conditions and the following disclaimer in the
+//       documentation and/or other materials provided with the distribution.
+//     * Neither the name of the Egret nor the
+//       names of its contributors may be used to endorse or promote products
+//       derived from this software without specific prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY EGRET AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
+//  OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+//  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL EGRET AND CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+//  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+//  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;LOSS OF USE, DATA,
+//  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+//  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+//  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+//////////////////////////////////////////////////////////////////////////////////////
+var eui;
+(function (eui) {
+    /**
+     * The SliderBase class lets users select a value by moving a slider thumb between
+     * the end points of the slider track.
+     * The current value of the slider is determined by the relative location of
+     * the thumb between the end points of the slider,
+     * corresponding to the slider's minimum and maximum values.
+     * The SliderBase class is a base class for HSlider and VSlider.
+     *
+     * @event eui.UIEvent.CHANGE_START Dispatched when the scroll position is going to change
+     * @event eui.UIEvent.CHANGE_END Dispatched when the scroll position changed complete
+     * @event egret.Event.CHANGE Dispatched when the scroll position is changing
+     *
+     * @see eui.HSlider
+     * @see eui.VSlider
+     *
+     * @version Egret 2.4
+     * @version eui 1.0
+     * @platform Web,Native
+     * @language en_US
+     */
+    /**
+     * 滑块控件基类，通过使用 SliderBase 类，用户可以在滑块轨道的端点之间移动滑块来选择值。
+     * 滑块的当前值由滑块端点（对应于滑块的最小值和最大值）之间滑块的相对位置确定。
+     * SliderBase 类是 HSlider 和 VSlider 的基类。
+     *
+     * @event eui.UIEvent.CHANGE_START 滚动位置改变开始
+     * @event eui.UIEvent.CHANGE_END 滚动位置改变结束
+     * @event egret.Event.CHANGE 滚动位置改变的时候
+     *
+     * @see eui.HSlider
+     * @see eui.VSlider
+     *
+     * @version Egret 2.4
+     * @version eui 1.0
+     * @platform Web,Native
+     * @language zh_CN
+     */
+    var SliderBase = (function (_super) {
+        __extends(SliderBase, _super);
+        /**
+         * Constructor
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 创建一个 SliderBase 实例
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        function SliderBase() {
+            var _this = _super.call(this) || this;
+            /**
+             * [SkinPart] Highlight of track.
+             * @skinPart
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language en_US
+             */
+            /**
+             * [SkinPart] 轨道高亮显示对象。
+             * @skinPart
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language zh_CN
+             */
+            _this.trackHighlight = null;
+            /**
+             * [SkinPart] Thumb display object.
+             * @skinPart
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language en_US
+             */
+            /**
+             * [SkinPart]滑块显示对象。
+             * @skinPart
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language zh_CN
+             */
+            _this.thumb = null;
+            /**
+             * [SkinPart] Track display object.
+             * @skinPart
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language en_US
+             */
+            /**
+             * [SkinPart]轨道显示对象。
+             * @skinPart
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language zh_CN
+             */
+            _this.track = null;
+            _this.$SliderBase = {
+                0: 0,
+                1: 0,
+                2: 0,
+                3: 0,
+                4: null,
+                5: null,
+                6: 300,
+                7: 0,
+                8: 0,
+                9: true,
+            };
+            _this.maximum = 10;
+            _this.addEventListener(egret.TouchEvent.TOUCH_BEGIN, _this.onTouchBegin, _this);
+            return _this;
+        }
+        Object.defineProperty(SliderBase.prototype, "slideDuration", {
+            /**
+             * Duration in milliseconds for the sliding animation when you tap on the track to move a thumb.
+             *
+             * @default 300
+             *
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language en_US
+             */
+            /**
+             * 在轨道上单击以移动滑块时，滑动动画持续的时间（以毫秒为单位）。设置为0将不执行缓动。
+             *
+             * @default 300
+             *
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language zh_CN
+             */
+            get: function () {
+                return this.$SliderBase[6 /* slideDuration */];
+            },
+            set: function (value) {
+                this.$SliderBase[6 /* slideDuration */] = +value || 0;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        /**
+         * Converts a track-relative x,y pixel location into a value between
+         * the minimum and maximum, inclusive.
+         *
+         * @param x The x coordinate of the location relative to the track's origin.
+         * @param y The y coordinate of the location relative to the track's origin.
+         * @return A value between the minimum and maximum, inclusive.
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 将相对于轨道的 x,y 像素位置转换为介于最小值和最大值（包括两者）之间的一个值。
+         *
+         * @param x 相对于轨道原点的位置的x坐标。
+         * @param y 相对于轨道原点的位置的y坐标。
+         * @return 介于最小值和最大值（包括两者）之间的一个值。
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        SliderBase.prototype.pointToValue = function (x, y) {
+            return this.minimum;
+        };
+        Object.defineProperty(SliderBase.prototype, "liveDragging", {
+            /**
+             * Specifies whether live dragging is enabled for the slider. If true, sets the value
+             * and values properties and dispatches the change event continuously as
+             * the user moves the thumb.
+             *
+             * @default true
+             *
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language en_US
+             */
+            /**
+             * 如果为 true，则将在沿着轨道拖动滑块时，而不是在释放滑块按钮时，提交此滑块的值。
+             *
+             * @default true
+             *
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language zh_CN
+             */
+            get: function () {
+                return this.$SliderBase[9 /* liveDragging */];
+            },
+            set: function (value) {
+                this.$SliderBase[9 /* liveDragging */] = !!value;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(SliderBase.prototype, "pendingValue", {
+            /**
+             * The value the slider will have when the touch is end.
+             * This property is updated when the slider thumb moves, even if <code>liveDragging</code> is false.<p/>
+             * If the <code>liveDragging</code> style is false, then the slider's value is only set
+             * when the touch is end.
+             *
+             * @default 0
+             *
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language en_US
+             */
+            /**
+             * 触摸结束时滑块将具有的值。
+             * 无论 liveDragging 是否为 true，在滑块拖动期间始终更新此属性。
+             * 而 value 属性在当 liveDragging 为 false 时，只在触摸释放时更新一次。
+             *
+             * @default 0
+             *
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language zh_CN
+             */
+            get: function () {
+                return this.$SliderBase[7 /* pendingValue */];
+            },
+            set: function (value) {
+                value = +value || 0;
+                var values = this.$SliderBase;
+                if (value === values[7 /* pendingValue */])
+                    return;
+                values[7 /* pendingValue */] = value;
+                this.invalidateDisplayList();
+            },
+            enumerable: true,
+            configurable: true
+        });
+        /**
+         * @inheritDoc
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         */
+        SliderBase.prototype.setValue = function (value) {
+            this.$SliderBase[7 /* pendingValue */] = value;
+            _super.prototype.setValue.call(this, value);
+        };
+        /**
+         * @inheritDoc
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         */
+        SliderBase.prototype.partAdded = function (partName, instance) {
+            _super.prototype.partAdded.call(this, partName, instance);
+            if (instance == this.thumb) {
+                this.thumb.addEventListener(egret.TouchEvent.TOUCH_BEGIN, this.onThumbTouchBegin, this);
+                this.thumb.addEventListener(egret.Event.RESIZE, this.onTrackOrThumbResize, this);
+            }
+            else if (instance == this.track) {
+                this.track.addEventListener(egret.TouchEvent.TOUCH_BEGIN, this.onTrackTouchBegin, this);
+                this.track.addEventListener(egret.Event.RESIZE, this.onTrackOrThumbResize, this);
+            }
+            else if (instance === this.trackHighlight) {
+                this.trackHighlight.touchEnabled = false;
+                if (egret.is(this.trackHighlight, "egret.DisplayObjectContainer")) {
+                    this.trackHighlight.touchChildren = false;
+                }
+            }
+        };
+        /**
+         * @inheritDoc
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         */
+        SliderBase.prototype.partRemoved = function (partName, instance) {
+            _super.prototype.partRemoved.call(this, partName, instance);
+            if (instance == this.thumb) {
+                this.thumb.removeEventListener(egret.TouchEvent.TOUCH_BEGIN, this.onThumbTouchBegin, this);
+                this.thumb.removeEventListener(egret.Event.RESIZE, this.onTrackOrThumbResize, this);
+            }
+            else if (instance == this.track) {
+                this.track.removeEventListener(egret.TouchEvent.TOUCH_BEGIN, this.onTrackTouchBegin, this);
+                this.track.removeEventListener(egret.Event.RESIZE, this.onTrackOrThumbResize, this);
+            }
+        };
+        /**
+         * @private
+         * 滑块或轨道尺寸改变事件
+         */
+        SliderBase.prototype.onTrackOrThumbResize = function (event) {
+            this.updateSkinDisplayList();
+        };
+        /**
+         * Handle touch-begin events on the scroll thumb. Records the touch begin point in clickOffset.
+         *
+         * @param The <code>egret.TouchEvent</code> object.
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 滑块触摸开始事件，记录触碰开始的坐标偏移量。
+         *
+         * @param event 事件 <code>egret.TouchEvent</code> 的对象.
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        SliderBase.prototype.onThumbTouchBegin = function (event) {
+            var values = this.$SliderBase;
+            if (values[5 /* animation */] && values[5 /* animation */].isPlaying)
+                this.stopAnimation();
+            var stage = this.$stage;
+            stage.addEventListener(egret.TouchEvent.TOUCH_MOVE, this.onStageTouchMove, this);
+            stage.addEventListener(egret.TouchEvent.TOUCH_END, this.onStageTouchEnd, this);
+            var clickOffset = this.thumb.globalToLocal(event.stageX, event.stageY, egret.$TempPoint);
+            values[0 /* clickOffsetX */] = clickOffset.x;
+            values[1 /* clickOffsetY */] = clickOffset.y;
+            eui.UIEvent.dispatchUIEvent(this, eui.UIEvent.CHANGE_START);
+        };
+        /**
+         * @private
+         * 舞台上触摸移动事件
+         */
+        SliderBase.prototype.onStageTouchMove = function (event) {
+            var values = this.$SliderBase;
+            values[2 /* moveStageX */] = event.$stageX;
+            values[3 /* moveStageY */] = event.$stageY;
+            var track = this.track;
+            if (!track)
+                return;
+            var p = track.globalToLocal(values[2 /* moveStageX */], values[3 /* moveStageY */], egret.$TempPoint);
+            var newValue = this.pointToValue(p.x - values[0 /* clickOffsetX */], p.y - values[1 /* clickOffsetY */]);
+            newValue = this.nearestValidValue(newValue, this.snapInterval);
+            this.updateWhenTouchMove(newValue);
+            event.updateAfterEvent();
+        };
+        /**
+         * Capture touch-move events anywhere on or off the stage.
+         * @param newValue new value
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 监听舞台的触碰移动事件。
+         * @param newValue 新的值
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        SliderBase.prototype.updateWhenTouchMove = function (newValue) {
+            if (newValue != this.$SliderBase[7 /* pendingValue */]) {
+                if (this.liveDragging) {
+                    this.setValue(newValue);
+                    this.dispatchEventWith(egret.Event.CHANGE);
+                }
+                else {
+                    this.pendingValue = newValue;
+                }
+            }
+        };
+        /**
+         * Handle touch-end events anywhere on or off the stage.
+         *
+         * @param The <code>egret.Event</code> object.
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 触摸结束事件
+         *
+         * @param event 事件 <code>egret.Event</code> 的对象。
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        SliderBase.prototype.onStageTouchEnd = function (event) {
+            var stage = event.$currentTarget;
+            stage.removeEventListener(egret.TouchEvent.TOUCH_MOVE, this.onStageTouchMove, this);
+            stage.removeEventListener(egret.TouchEvent.TOUCH_END, this.onStageTouchEnd, this);
+            eui.UIEvent.dispatchUIEvent(this, eui.UIEvent.CHANGE_END);
+            var values = this.$SliderBase;
+            if (!this.liveDragging && this.value != values[7 /* pendingValue */]) {
+                this.setValue(values[7 /* pendingValue */]);
+                this.dispatchEventWith(egret.Event.CHANGE);
+            }
+        };
+        /**
+         * @private
+         * 当在组件上按下时记录被按下的子显示对象
+         */
+        SliderBase.prototype.onTouchBegin = function (event) {
+            this.$stage.addEventListener(egret.TouchEvent.TOUCH_END, this.stageTouchEndHandler, this);
+            this.$SliderBase[4 /* touchDownTarget */] = (event.$target);
+        };
+        /**
+         * @private
+         * 当结束时，若不是在 touchDownTarget 上弹起，而是另外的子显示对象上弹起时，额外抛出一个触摸单击事件。
+         */
+        SliderBase.prototype.stageTouchEndHandler = function (event) {
+            var target = event.$target;
+            var values = this.$SliderBase;
+            event.$currentTarget.removeEventListener(egret.TouchEvent.TOUCH_END, this.stageTouchEndHandler, this);
+            if (values[4 /* touchDownTarget */] != target && this.contains((target))) {
+                egret.TouchEvent.dispatchTouchEvent(this, egret.TouchEvent.TOUCH_TAP, true, true, event.$stageX, event.$stageY, event.touchPointID);
+            }
+            values[4 /* touchDownTarget */] = null;
+        };
+        /**
+         * @private
+         * 动画播放更新数值
+         */
+        SliderBase.prototype.$animationUpdateHandler = function (animation) {
+            this.pendingValue = animation.currentValue;
+        };
+        /**
+         * @private
+         * 动画播放完毕
+         */
+        SliderBase.prototype.animationEndHandler = function (animation) {
+            this.setValue(this.$SliderBase[8 /* slideToValue */]);
+            this.dispatchEventWith(egret.Event.CHANGE);
+            eui.UIEvent.dispatchUIEvent(this, eui.UIEvent.CHANGE_END);
+        };
+        /**
+         * @private
+         * 停止播放动画
+         */
+        SliderBase.prototype.stopAnimation = function () {
+            this.$SliderBase[5 /* animation */].stop();
+            this.setValue(this.nearestValidValue(this.pendingValue, this.snapInterval));
+            this.dispatchEventWith(egret.Event.CHANGE);
+            eui.UIEvent.dispatchUIEvent(this, eui.UIEvent.CHANGE_END);
+        };
+        /**
+         * Handle touch-begin events for the slider track. We
+         * calculate the value based on the new position and then
+         * move the thumb to the correct location as well as
+         * commit the value.
+         * @param The <code>egret.TouchEvent</code> object.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 轨道的触碰开始事件。我们会在这里根据新的坐标位置计算value，然后移动滑块到当前位置。
+         *
+         * @param event 事件 <code>egret.TouchEvent</code> 的对象.
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        SliderBase.prototype.onTrackTouchBegin = function (event) {
+            var thumbW = this.thumb ? this.thumb.width : 0;
+            var thumbH = this.thumb ? this.thumb.height : 0;
+            var offsetX = event.$stageX - (thumbW / 2);
+            var offsetY = event.$stageY - (thumbH / 2);
+            var p = this.track.globalToLocal(offsetX, offsetY, egret.$TempPoint);
+            var rangeValues = this.$Range;
+            var newValue = this.pointToValue(p.x, p.y);
+            newValue = this.nearestValidValue(newValue, rangeValues[7 /* snapInterval */]);
+            var values = this.$SliderBase;
+            if (newValue != values[7 /* pendingValue */]) {
+                if (values[6 /* slideDuration */] != 0) {
+                    if (!values[5 /* animation */]) {
+                        values[5 /* animation */] = new eui.sys.Animation(this.$animationUpdateHandler, this);
+                        values[5 /* animation */].endFunction = this.animationEndHandler;
+                    }
+                    var animation = values[5 /* animation */];
+                    if (animation.isPlaying)
+                        this.stopAnimation();
+                    values[8 /* slideToValue */] = newValue;
+                    animation.duration = values[6 /* slideDuration */] *
+                        (Math.abs(values[7 /* pendingValue */] - values[8 /* slideToValue */]) / (rangeValues[0 /* maximum */] - rangeValues[2 /* minimum */]));
+                    animation.from = values[7 /* pendingValue */];
+                    animation.to = values[8 /* slideToValue */];
+                    eui.UIEvent.dispatchUIEvent(this, eui.UIEvent.CHANGE_START);
+                    animation.play();
+                }
+                else {
+                    this.setValue(newValue);
+                    this.dispatchEventWith(egret.Event.CHANGE);
+                }
+            }
+        };
+        return SliderBase;
+    }(eui.Range));
+    eui.SliderBase = SliderBase;
+    __reflect(SliderBase.prototype, "eui.SliderBase");
 })(eui || (eui = {}));
 //////////////////////////////////////////////////////////////////////////////////////
 //
@@ -6826,7 +7616,8 @@ var eui;
             EXMLParser.prototype.$parseCode = function (codeText, classStr) {
                 //传入的是编译后的js字符串
                 var className = classStr ? classStr : "$exmlClass" + innerClassCount++;
-                var clazz = eval(codeText);
+                var geval = eval;
+                var clazz = geval(codeText);
                 var hasClass = true;
                 if (hasClass && clazz) {
                     egret.registerClass(clazz, className);
@@ -6888,9 +7679,10 @@ var eui;
                 var exClass = this.parseClass(xmlData, className);
                 var code = exClass.toCode();
                 var clazz = null;
+                var geval = eval;
                 if (true) {
                     try {
-                        clazz = eval(code);
+                        clazz = geval(code);
                     }
                     catch (e) {
                         egret.log(code);
@@ -6898,7 +7690,7 @@ var eui;
                     }
                 }
                 else {
-                    clazz = eval(code);
+                    clazz = geval(code);
                 }
                 if (hasClass && clazz) {
                     egret.registerClass(clazz, className);
@@ -7038,6 +7830,9 @@ var eui;
                         if (id) {
                             var e = new RegExp("^[a-zA-Z_$]{1}[a-z0-9A-Z_$]*");
                             if (id.match(e) == null) {
+                                egret.$warn(2022, id);
+                            }
+                            if (id.match(new RegExp(/ /g)) != null) {
                                 egret.$warn(2022, id);
                             }
                             if (this.skinParts.indexOf(id) == -1) {
@@ -8297,105 +9092,70 @@ var eui;
 var eui;
 (function (eui) {
     /**
-     * The ScrollBarBase class helps to position
-     * the portion of data that is displayed when there is too much data
-     * to fit in a display area.
-     * The ScrollBarBase class displays a pair of viewport and a thumb.
-     * viewport is a instance that implements IViewport.
+     * The ToggleButton component defines a toggle button.
+     * Clicking the button toggles it between the up and an down states.
+     * If you click the button while it is in the up state,
+     * it toggles to the down state. You must click the button again
+     * to toggle it back to the up state.
+     * <p>You can get or set this state programmatically
+     * by using the <code>selected</code> property.</p>
      *
-     * @see eui.IViewport
+     * @event egret.Event.CHANGE Dispatched when the <code>selected</code> property
+     * changes for the ToggleButton control.
+     * This event is dispatched only when the
+     * user interacts with the control by touching.
      *
+     * @state up Button up state
+     * @state down Button down state
+     * @state disabled Button disabled state
+     * @state upAndSelected Up state when the button is selected
+     * @state downAndSelected Down state when the button is selected
+     * @state disabledAndSelected Disabled state when the button is selected
      * @version Egret 2.4
      * @version eui 1.0
      * @platform Web,Native
+     * @includeExample  extension/eui/components/ToggleButtonExample.ts
      * @language en_US
      */
     /**
-     * <code>ScrollBarBase</code> 滚动条基类，该类帮助在因数据太多而不能在显示区域完全显示时定位显示的数据部分。
-     * ScrollBarBase 类显示视区的一部分和一个指示滑块。
-     * 视区是一个IViewport接口实现的实例。
+     * ToggleButton 组件定义切换按钮。单击该按钮会在弹起状态和按下状态之间进行切换。
+     * 如果在按钮处于弹起状态时单击该按钮，则它会切换到按下状态。必须再次单击该按钮才可将其切换回弹起状态。
+     * <p>可以使用 <code>selected</code> 属性以编程方式获取或设置此状态。</p>
      *
-     * @see eui.IViewport
+     * @event egret.Event.CHANGE ToggleButtonBase 控件的 <code>selected</code> 属性更改时分派。
+     * 仅当用户通过触摸与控件交互时，才分派此事件。
      *
+     * @state up 按钮弹起状态
+     * @state down 按钮按下状态
+     * @state disabled 按钮禁用状态
+     * @state upAndSelected 按钮选择时的弹起状态
+     * @state downAndSelected 按钮选择时的按下状态
+     * @state disabledAndSelected 按钮选择时的禁用状态
      * @version Egret 2.4
      * @version eui 1.0
      * @platform Web,Native
+     * @includeExample  extension/eui/components/ToggleButtonExample.ts
      * @language zh_CN
      */
-    var ScrollBarBase = (function (_super) {
-        __extends(ScrollBarBase, _super);
-        /**
-         * Constructor.
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 创建一个ScrollBarBase实例。
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        function ScrollBarBase() {
-            var _this = _super.call(this) || this;
-            /**
-             * [SkinPart] Thumb display object.
-             * @skinPart
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * [SkinPart]滑块显示对象。
-             * @skinPart
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            _this.thumb = null;
+    var ToggleButton = (function (_super) {
+        __extends(ToggleButton, _super);
+        function ToggleButton() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
             /**
              * @private
              */
-            _this.$viewport = null;
+            _this.$selected = false;
             /**
-             * Whether the scrollbar can be autohide.
-             * @version Egret 3.0.2
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language en_US
+             * @private
+             * 是否根据触摸事件自动变换选中状态,默认true。仅框架内使用。
              */
-            /**
-             * 是否自动隐藏 scrollbar
-             * @version Egret 3.0.2
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            _this.autoVisibility = true;
+            _this.$autoSelected = true;
             return _this;
         }
-        Object.defineProperty(ScrollBarBase.prototype, "viewport", {
+        Object.defineProperty(ToggleButton.prototype, "selected", {
             /**
-             * The viewport controlled by this scrollbar.
-             *
-             * If a viewport is specified, then changes to its actual size, content
-             * size, and scroll position cause the corresponding ScrollBarBase methods to
-             * run:
-             * <ul>
-             *     <li><code>onViewportResize()</code></li>
-             *     <li><code>onPropertyChanged()</code></li>
-             * </ul><p/>
-             *
-             * The VScrollBar and HScrollBar classes override these methods to keep their properties in
-             * sync with the viewport.
-             *
-             * @default null
-             * @see eui.VScrollBar
-             * @see eui.HScrollBar
+             * Contains <code>true</code> if the button is in the down state,
+             * and <code>false</code> if it is in the up state.
              *
              * @version Egret 2.4
              * @version eui 1.0
@@ -8403,19 +9163,7 @@ var eui;
              * @language en_US
              */
             /**
-             * 由该滚动条控制的视区。
-             *
-             * 如果指定了视区，则对其实际大小、内容大小和滚动位置的更改会导致运行相对应的 ScrollBarBase 方法：
-             * <ul>
-             *     <li><code>onViewportResize()</code></li>
-             *     <li><code>onPropertyChanged()</code></li>
-             * </ul><p/>
-             *
-             * VScrollBar 和 HScrollBar 类需要重写这些方法以保证属性与视区的同步。
-             *
-             * @default null
-             * @see eui.VScrollBar
-             * @see eui.HScrollBar
+             * 按钮处于按下状态时为 <code>true</code>，而按钮处于弹起状态时为 <code>false</code>。
              *
              * @version Egret 2.4
              * @version eui 1.0
@@ -8423,23 +9171,10 @@ var eui;
              * @language zh_CN
              */
             get: function () {
-                return this.$viewport;
+                return this.$selected;
             },
             set: function (value) {
-                if (value == this.$viewport) {
-                    return;
-                }
-                var viewport = this.$viewport;
-                if (viewport) {
-                    viewport.removeEventListener(eui.PropertyEvent.PROPERTY_CHANGE, this.onPropertyChanged, this);
-                    viewport.removeEventListener(egret.Event.RESIZE, this.onViewportResize, this);
-                }
-                this.$viewport = value;
-                if (value) {
-                    value.addEventListener(eui.PropertyEvent.PROPERTY_CHANGE, this.onPropertyChanged, this);
-                    value.addEventListener(egret.Event.RESIZE, this.onViewportResize, this);
-                }
-                this.invalidateDisplayList();
+                this.$setSelected(value);
             },
             enumerable: true,
             configurable: true
@@ -8447,33 +9182,56 @@ var eui;
         /**
          * @private
          *
-         * @param event
+         * @param value
          */
-        ScrollBarBase.prototype.onViewportResize = function (event) {
-            this.invalidateDisplayList();
+        ToggleButton.prototype.$setSelected = function (value) {
+            value = !!value;
+            if (value === this.$selected)
+                return false;
+            this.$selected = value;
+            this.invalidateState();
+            eui.PropertyEvent.dispatchPropertyEvent(this, eui.PropertyEvent.PROPERTY_CHANGE, "selected");
+            return true;
         };
         /**
-         * Properties of viewport changed.
-         * @param event
+         * @inheritDoc
+         *
          * @version Egret 2.4
          * @version eui 1.0
          * @platform Web,Native
-         * @language en_US
          */
+        ToggleButton.prototype.getCurrentState = function () {
+            var state = _super.prototype.getCurrentState.call(this);
+            if (!this.$selected) {
+                return state;
+            }
+            else {
+                var selectedState = state + "AndSelected";
+                var skin = this.skin;
+                if (skin && skin.hasState(selectedState)) {
+                    return selectedState;
+                }
+                return state == "disabled" ? "disabled" : "down";
+            }
+        };
         /**
-         * 视区属性发生改变。
-         * @param event
+         * @inheritDoc
+         *
          * @version Egret 2.4
          * @version eui 1.0
          * @platform Web,Native
-         * @language zh_CN
          */
-        ScrollBarBase.prototype.onPropertyChanged = function (event) {
+        ToggleButton.prototype.buttonReleased = function () {
+            if (!this.$autoSelected)
+                return;
+            this.selected = !this.$selected;
+            this.dispatchEventWith(egret.Event.CHANGE);
         };
-        return ScrollBarBase;
-    }(eui.Component));
-    eui.ScrollBarBase = ScrollBarBase;
-    __reflect(ScrollBarBase.prototype, "eui.ScrollBarBase");
+        return ToggleButton;
+    }(eui.Button));
+    eui.ToggleButton = ToggleButton;
+    __reflect(ToggleButton.prototype, "eui.ToggleButton");
+    eui.registerBindable(ToggleButton.prototype, "selected");
 })(eui || (eui = {}));
 //////////////////////////////////////////////////////////////////////////////////////
 //
@@ -9322,257 +10080,48 @@ var eui;
 var eui;
 (function (eui) {
     /**
-     * The SliderBase class lets users select a value by moving a slider thumb between
-     * the end points of the slider track.
-     * The current value of the slider is determined by the relative location of
-     * the thumb between the end points of the slider,
-     * corresponding to the slider's minimum and maximum values.
-     * The SliderBase class is a base class for HSlider and VSlider.
+     * The HSlider (horizontal slider) control lets users select a value
+     * by moving a slider thumb between the end points of the slider track.
+     * The current value of the slider is determined by the relative location of the thumb between
+     * the end points of the slider, corresponding to the slider's minimum and maximum values.
      *
-     * @event eui.UIEvent.CHANGE_START Dispatched when the scroll position is going to change
-     * @event eui.UIEvent.CHANGE_END Dispatched when the scroll position changed complete
-     * @event egret.Event.CHANGE Dispatched when the scroll position is changing
-     *
-     * @see eui.HSlider
-     * @see eui.VSlider
-     *
+     * @includeExample  extension/eui/components/HSliderExample.ts
      * @version Egret 2.4
      * @version eui 1.0
      * @platform Web,Native
      * @language en_US
      */
     /**
-     * 滑块控件基类，通过使用 SliderBase 类，用户可以在滑块轨道的端点之间移动滑块来选择值。
+     * 使用 HSlider（水平滑块）控件，用户可通过在滑块轨道的端点之间移动滑块来选择值。
      * 滑块的当前值由滑块端点（对应于滑块的最小值和最大值）之间滑块的相对位置确定。
-     * SliderBase 类是 HSlider 和 VSlider 的基类。
      *
-     * @event eui.UIEvent.CHANGE_START 滚动位置改变开始
-     * @event eui.UIEvent.CHANGE_END 滚动位置改变结束
-     * @event egret.Event.CHANGE 滚动位置改变的时候
-     *
-     * @see eui.HSlider
-     * @see eui.VSlider
-     *
+     * @includeExample  extension/eui/components/HSliderExample.ts
      * @version Egret 2.4
      * @version eui 1.0
      * @platform Web,Native
      * @language zh_CN
      */
-    var SliderBase = (function (_super) {
-        __extends(SliderBase, _super);
+    var HSlider = (function (_super) {
+        __extends(HSlider, _super);
         /**
-         * Constructor
+         * Constructor.
+         *
          * @version Egret 2.4
          * @version eui 1.0
          * @platform Web,Native
          * @language en_US
          */
         /**
-         * 创建一个 SliderBase 实例
+         * 构造函数。
+         *
          * @version Egret 2.4
          * @version eui 1.0
          * @platform Web,Native
          * @language zh_CN
          */
-        function SliderBase() {
-            var _this = _super.call(this) || this;
-            /**
-             * [SkinPart] Highlight of track.
-             * @skinPart
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * [SkinPart] 轨道高亮显示对象。
-             * @skinPart
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            _this.trackHighlight = null;
-            /**
-             * [SkinPart] Thumb display object.
-             * @skinPart
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * [SkinPart]滑块显示对象。
-             * @skinPart
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            _this.thumb = null;
-            /**
-             * [SkinPart] Track display object.
-             * @skinPart
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * [SkinPart]轨道显示对象。
-             * @skinPart
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            _this.track = null;
-            _this.$SliderBase = {
-                0: 0,
-                1: 0,
-                2: 0,
-                3: 0,
-                4: null,
-                5: null,
-                6: 300,
-                7: 0,
-                8: 0,
-                9: true,
-            };
-            _this.maximum = 10;
-            _this.addEventListener(egret.TouchEvent.TOUCH_BEGIN, _this.onTouchBegin, _this);
-            return _this;
+        function HSlider() {
+            return _super.call(this) || this;
         }
-        Object.defineProperty(SliderBase.prototype, "slideDuration", {
-            /**
-             * Duration in milliseconds for the sliding animation when you tap on the track to move a thumb.
-             *
-             * @default 300
-             *
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * 在轨道上单击以移动滑块时，滑动动画持续的时间（以毫秒为单位）。设置为0将不执行缓动。
-             *
-             * @default 300
-             *
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            get: function () {
-                return this.$SliderBase[6 /* slideDuration */];
-            },
-            set: function (value) {
-                this.$SliderBase[6 /* slideDuration */] = +value || 0;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        /**
-         * Converts a track-relative x,y pixel location into a value between
-         * the minimum and maximum, inclusive.
-         *
-         * @param x The x coordinate of the location relative to the track's origin.
-         * @param y The y coordinate of the location relative to the track's origin.
-         * @return A value between the minimum and maximum, inclusive.
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 将相对于轨道的 x,y 像素位置转换为介于最小值和最大值（包括两者）之间的一个值。
-         *
-         * @param x 相对于轨道原点的位置的x坐标。
-         * @param y 相对于轨道原点的位置的y坐标。
-         * @return 介于最小值和最大值（包括两者）之间的一个值。
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        SliderBase.prototype.pointToValue = function (x, y) {
-            return this.minimum;
-        };
-        Object.defineProperty(SliderBase.prototype, "liveDragging", {
-            /**
-             * Specifies whether live dragging is enabled for the slider. If true, sets the value
-             * and values properties and dispatches the change event continuously as
-             * the user moves the thumb.
-             *
-             * @default true
-             *
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * 如果为 true，则将在沿着轨道拖动滑块时，而不是在释放滑块按钮时，提交此滑块的值。
-             *
-             * @default true
-             *
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            get: function () {
-                return this.$SliderBase[9 /* liveDragging */];
-            },
-            set: function (value) {
-                this.$SliderBase[9 /* liveDragging */] = !!value;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(SliderBase.prototype, "pendingValue", {
-            /**
-             * The value the slider will have when the touch is end.
-             * This property is updated when the slider thumb moves, even if <code>liveDragging</code> is false.<p/>
-             * If the <code>liveDragging</code> style is false, then the slider's value is only set
-             * when the touch is end.
-             *
-             * @default 0
-             *
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * 触摸结束时滑块将具有的值。
-             * 无论 liveDragging 是否为 true，在滑块拖动期间始终更新此属性。
-             * 而 value 属性在当 liveDragging 为 false 时，只在触摸释放时更新一次。
-             *
-             * @default 0
-             *
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            get: function () {
-                return this.$SliderBase[7 /* pendingValue */];
-            },
-            set: function (value) {
-                value = +value || 0;
-                var values = this.$SliderBase;
-                if (value === values[7 /* pendingValue */])
-                    return;
-                values[7 /* pendingValue */] = value;
-                this.invalidateDisplayList();
-            },
-            enumerable: true,
-            configurable: true
-        });
         /**
          * @inheritDoc
          *
@@ -9580,604 +10129,57 @@ var eui;
          * @version eui 1.0
          * @platform Web,Native
          */
-        SliderBase.prototype.setValue = function (value) {
-            this.$SliderBase[7 /* pendingValue */] = value;
-            _super.prototype.setValue.call(this, value);
-        };
-        /**
-         * @inheritDoc
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        SliderBase.prototype.partAdded = function (partName, instance) {
-            _super.prototype.partAdded.call(this, partName, instance);
-            if (instance == this.thumb) {
-                this.thumb.addEventListener(egret.TouchEvent.TOUCH_BEGIN, this.onThumbTouchBegin, this);
-                this.thumb.addEventListener(egret.Event.RESIZE, this.onTrackOrThumbResize, this);
-            }
-            else if (instance == this.track) {
-                this.track.addEventListener(egret.TouchEvent.TOUCH_BEGIN, this.onTrackTouchBegin, this);
-                this.track.addEventListener(egret.Event.RESIZE, this.onTrackOrThumbResize, this);
-            }
-            else if (instance === this.trackHighlight) {
-                this.trackHighlight.touchEnabled = false;
-                if (egret.is(this.trackHighlight, "egret.DisplayObjectContainer")) {
-                    this.trackHighlight.touchChildren = false;
-                }
-            }
-        };
-        /**
-         * @inheritDoc
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        SliderBase.prototype.partRemoved = function (partName, instance) {
-            _super.prototype.partRemoved.call(this, partName, instance);
-            if (instance == this.thumb) {
-                this.thumb.removeEventListener(egret.TouchEvent.TOUCH_BEGIN, this.onThumbTouchBegin, this);
-                this.thumb.removeEventListener(egret.Event.RESIZE, this.onTrackOrThumbResize, this);
-            }
-            else if (instance == this.track) {
-                this.track.removeEventListener(egret.TouchEvent.TOUCH_BEGIN, this.onTrackTouchBegin, this);
-                this.track.removeEventListener(egret.Event.RESIZE, this.onTrackOrThumbResize, this);
-            }
+        HSlider.prototype.pointToValue = function (x, y) {
+            if (!this.thumb || !this.track)
+                return 0;
+            var values = this.$Range;
+            var range = values[0 /* maximum */] - values[2 /* minimum */];
+            var thumbRange = this.getThumbRange();
+            return values[2 /* minimum */] + (thumbRange != 0 ? (x / thumbRange) * range : 0);
         };
         /**
          * @private
-         * 滑块或轨道尺寸改变事件
+         *
+         * @returns
          */
-        SliderBase.prototype.onTrackOrThumbResize = function (event) {
-            this.updateSkinDisplayList();
+        HSlider.prototype.getThumbRange = function () {
+            var bounds = egret.$TempRectangle;
+            this.track.getLayoutBounds(bounds);
+            var thumbRange = bounds.width;
+            this.thumb.getLayoutBounds(bounds);
+            return thumbRange - bounds.width;
         };
         /**
-         * Handle touch-begin events on the scroll thumb. Records the touch begin point in clickOffset.
-         *
-         * @param The <code>egret.TouchEvent</code> object.
+         * @inheritDoc
          *
          * @version Egret 2.4
          * @version eui 1.0
          * @platform Web,Native
-         * @language en_US
          */
-        /**
-         * 滑块触摸开始事件，记录触碰开始的坐标偏移量。
-         *
-         * @param event 事件 <code>egret.TouchEvent</code> 的对象.
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        SliderBase.prototype.onThumbTouchBegin = function (event) {
-            var values = this.$SliderBase;
-            if (values[5 /* animation */] && values[5 /* animation */].isPlaying)
-                this.stopAnimation();
-            var stage = this.$stage;
-            stage.addEventListener(egret.TouchEvent.TOUCH_MOVE, this.onStageTouchMove, this);
-            stage.addEventListener(egret.TouchEvent.TOUCH_END, this.onStageTouchEnd, this);
-            var clickOffset = this.thumb.globalToLocal(event.stageX, event.stageY, egret.$TempPoint);
-            values[0 /* clickOffsetX */] = clickOffset.x;
-            values[1 /* clickOffsetY */] = clickOffset.y;
-            eui.UIEvent.dispatchUIEvent(this, eui.UIEvent.CHANGE_START);
-        };
-        /**
-         * @private
-         * 舞台上触摸移动事件
-         */
-        SliderBase.prototype.onStageTouchMove = function (event) {
-            var values = this.$SliderBase;
-            values[2 /* moveStageX */] = event.$stageX;
-            values[3 /* moveStageY */] = event.$stageY;
-            var track = this.track;
-            if (!track)
+        HSlider.prototype.updateSkinDisplayList = function () {
+            if (!this.thumb || !this.track)
                 return;
-            var p = track.globalToLocal(values[2 /* moveStageX */], values[3 /* moveStageY */], egret.$TempPoint);
-            var newValue = this.pointToValue(p.x - values[0 /* clickOffsetX */], p.y - values[1 /* clickOffsetY */]);
-            newValue = this.nearestValidValue(newValue, this.snapInterval);
-            this.updateWhenTouchMove(newValue);
-            event.updateAfterEvent();
-        };
-        /**
-         * Capture touch-move events anywhere on or off the stage.
-         * @param newValue new value
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 监听舞台的触碰移动事件。
-         * @param newValue 新的值
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        SliderBase.prototype.updateWhenTouchMove = function (newValue) {
-            if (newValue != this.$SliderBase[7 /* pendingValue */]) {
-                if (this.liveDragging) {
-                    this.setValue(newValue);
-                    this.dispatchEventWith(egret.Event.CHANGE);
-                }
-                else {
-                    this.pendingValue = newValue;
-                }
+            var values = this.$Range;
+            var thumbRange = this.getThumbRange();
+            var range = values[0 /* maximum */] - values[2 /* minimum */];
+            var thumbPosTrackX = (range > 0) ? ((this.pendingValue - values[2 /* minimum */]) / range) * thumbRange : 0;
+            var thumbPos = this.track.localToGlobal(thumbPosTrackX, 0, egret.$TempPoint);
+            var thumbPosX = thumbPos.x;
+            var thumbPosY = thumbPos.y;
+            var thumbPosParentX = this.thumb.$parent.globalToLocal(thumbPosX, thumbPosY, egret.$TempPoint).x;
+            var bounds = egret.$TempRectangle;
+            this.thumb.getLayoutBounds(bounds);
+            this.thumb.setLayoutBoundsPosition(Math.round(thumbPosParentX), bounds.y);
+            if (this.trackHighlight && this.trackHighlight.$parent) {
+                var trackHighlightX = this.trackHighlight.$parent.globalToLocal(thumbPosX, thumbPosY, egret.$TempPoint).x - thumbPosTrackX;
+                this.trackHighlight.x = Math.round(trackHighlightX);
+                this.trackHighlight.width = Math.round(thumbPosTrackX);
             }
         };
-        /**
-         * Handle touch-end events anywhere on or off the stage.
-         *
-         * @param The <code>egret.Event</code> object.
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 触摸结束事件
-         *
-         * @param event 事件 <code>egret.Event</code> 的对象。
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        SliderBase.prototype.onStageTouchEnd = function (event) {
-            var stage = event.$currentTarget;
-            stage.removeEventListener(egret.TouchEvent.TOUCH_MOVE, this.onStageTouchMove, this);
-            stage.removeEventListener(egret.TouchEvent.TOUCH_END, this.onStageTouchEnd, this);
-            eui.UIEvent.dispatchUIEvent(this, eui.UIEvent.CHANGE_END);
-            var values = this.$SliderBase;
-            if (!this.liveDragging && this.value != values[7 /* pendingValue */]) {
-                this.setValue(values[7 /* pendingValue */]);
-                this.dispatchEventWith(egret.Event.CHANGE);
-            }
-        };
-        /**
-         * @private
-         * 当在组件上按下时记录被按下的子显示对象
-         */
-        SliderBase.prototype.onTouchBegin = function (event) {
-            this.$stage.addEventListener(egret.TouchEvent.TOUCH_END, this.stageTouchEndHandler, this);
-            this.$SliderBase[4 /* touchDownTarget */] = (event.$target);
-        };
-        /**
-         * @private
-         * 当结束时，若不是在 touchDownTarget 上弹起，而是另外的子显示对象上弹起时，额外抛出一个触摸单击事件。
-         */
-        SliderBase.prototype.stageTouchEndHandler = function (event) {
-            var target = event.$target;
-            var values = this.$SliderBase;
-            event.$currentTarget.removeEventListener(egret.TouchEvent.TOUCH_END, this.stageTouchEndHandler, this);
-            if (values[4 /* touchDownTarget */] != target && this.contains((target))) {
-                egret.TouchEvent.dispatchTouchEvent(this, egret.TouchEvent.TOUCH_TAP, true, true, event.$stageX, event.$stageY, event.touchPointID);
-            }
-            values[4 /* touchDownTarget */] = null;
-        };
-        /**
-         * @private
-         * 动画播放更新数值
-         */
-        SliderBase.prototype.$animationUpdateHandler = function (animation) {
-            this.pendingValue = animation.currentValue;
-        };
-        /**
-         * @private
-         * 动画播放完毕
-         */
-        SliderBase.prototype.animationEndHandler = function (animation) {
-            this.setValue(this.$SliderBase[8 /* slideToValue */]);
-            this.dispatchEventWith(egret.Event.CHANGE);
-            eui.UIEvent.dispatchUIEvent(this, eui.UIEvent.CHANGE_END);
-        };
-        /**
-         * @private
-         * 停止播放动画
-         */
-        SliderBase.prototype.stopAnimation = function () {
-            this.$SliderBase[5 /* animation */].stop();
-            this.setValue(this.nearestValidValue(this.pendingValue, this.snapInterval));
-            this.dispatchEventWith(egret.Event.CHANGE);
-            eui.UIEvent.dispatchUIEvent(this, eui.UIEvent.CHANGE_END);
-        };
-        /**
-         * Handle touch-begin events for the slider track. We
-         * calculate the value based on the new position and then
-         * move the thumb to the correct location as well as
-         * commit the value.
-         * @param The <code>egret.TouchEvent</code> object.
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 轨道的触碰开始事件。我们会在这里根据新的坐标位置计算value，然后移动滑块到当前位置。
-         *
-         * @param event 事件 <code>egret.TouchEvent</code> 的对象.
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        SliderBase.prototype.onTrackTouchBegin = function (event) {
-            var thumbW = this.thumb ? this.thumb.width : 0;
-            var thumbH = this.thumb ? this.thumb.height : 0;
-            var offsetX = event.$stageX - (thumbW / 2);
-            var offsetY = event.$stageY - (thumbH / 2);
-            var p = this.track.globalToLocal(offsetX, offsetY, egret.$TempPoint);
-            var rangeValues = this.$Range;
-            var newValue = this.pointToValue(p.x, p.y);
-            newValue = this.nearestValidValue(newValue, rangeValues[7 /* snapInterval */]);
-            var values = this.$SliderBase;
-            if (newValue != values[7 /* pendingValue */]) {
-                if (values[6 /* slideDuration */] != 0) {
-                    if (!values[5 /* animation */]) {
-                        values[5 /* animation */] = new eui.sys.Animation(this.$animationUpdateHandler, this);
-                        values[5 /* animation */].endFunction = this.animationEndHandler;
-                    }
-                    var animation = values[5 /* animation */];
-                    if (animation.isPlaying)
-                        this.stopAnimation();
-                    values[8 /* slideToValue */] = newValue;
-                    animation.duration = values[6 /* slideDuration */] *
-                        (Math.abs(values[7 /* pendingValue */] - values[8 /* slideToValue */]) / (rangeValues[0 /* maximum */] - rangeValues[2 /* minimum */]));
-                    animation.from = values[7 /* pendingValue */];
-                    animation.to = values[8 /* slideToValue */];
-                    eui.UIEvent.dispatchUIEvent(this, eui.UIEvent.CHANGE_START);
-                    animation.play();
-                }
-                else {
-                    this.setValue(newValue);
-                    this.dispatchEventWith(egret.Event.CHANGE);
-                }
-            }
-        };
-        return SliderBase;
-    }(eui.Range));
-    eui.SliderBase = SliderBase;
-    __reflect(SliderBase.prototype, "eui.SliderBase");
-})(eui || (eui = {}));
-//////////////////////////////////////////////////////////////////////////////////////
-//
-//  Copyright (c) 2014-present, Egret Technology.
-//  All rights reserved.
-//  Redistribution and use in source and binary forms, with or without
-//  modification, are permitted provided that the following conditions are met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//     * Neither the name of the Egret nor the
-//       names of its contributors may be used to endorse or promote products
-//       derived from this software without specific prior written permission.
-//
-//  THIS SOFTWARE IS PROVIDED BY EGRET AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
-//  OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-//  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-//  IN NO EVENT SHALL EGRET AND CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-//  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-//  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;LOSS OF USE, DATA,
-//  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-//  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-//  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-//////////////////////////////////////////////////////////////////////////////////////
-var eui;
-(function (eui) {
-    function joinValues(templates) {
-        var first = templates[0];
-        var value = first instanceof eui.Watcher ? first.getValue() : first;
-        var length = templates.length;
-        for (var i = 1; i < length; i++) {
-            var item = templates[i];
-            if (item instanceof eui.Watcher) {
-                item = item.getValue();
-            }
-            value += item;
-        }
-        return value;
-    }
-    /**
-     * The Binding class defines utility methods for performing data binding.
-     * You can use the methods defined in this class to configure data bindings.
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @includeExample extension/eui/binding/BindingExample.ts
-     * @language en_US
-     */
-    /**
-     * 绑定工具类，用于执行数据绑定用的方法集。您可以使用此类中定义的方法来配置数据绑定。
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @includeExample extension/eui/binding/BindingExample.ts
-     * @language zh_CN
-     */
-    var Binding = (function () {
-        function Binding() {
-        }
-        /**
-         * Binds a property, <prop>prop</code> on the <code>target</code> Object, to a bindable property or peoperty chain.
-         * @param host The object that hosts the property or property chain to be watched.
-         * The <code>host</code> maintains a list of <code>targets</code> to update theirs <code>prop</code> when <code>chain</code> changes.
-         * @param chain A value specifying the property or chain to be watched. For example, when watch the property <code>host.a.b.c</code>,
-         * you need call the method like this: <code>indProperty(host, ["a","b","c"], ...)</code>
-         * @param target The Object defining the property to be bound to <code>chain</code>.
-         * @param prop The name of the public property defined in the <code>site</code> Object to be bound.
-         * @returns A ChangeWatcher instance, if at least one property name has been specified
-         * to the <code>chain</code> argument; null otherwise.
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 绑定一个对象的属性值到要监视的对象属性上。
-         * @param host 用于承载要监视的属性或属性链的对象。
-         * 当 <code>host</code>上<code>chain</code>所对应的值发生改变时，<code>target</code>上的<code>prop</code>属性将被自动更新。
-         * @param chain 用于指定要监视的属性链的值。例如，要监视属性 <code>host.a.b.c</code>，需按以下形式调用此方法：<code>bindProperty(host, ["a","b","c"], ...)。</code>
-         * @param target 本次绑定要更新的目标对象。
-         * @param prop 本次绑定要更新的目标属性名称。
-         * @returns 如果已为 chain 参数至少指定了一个属性名称，则返回 Watcher 实例；否则返回 null。
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        Binding.bindProperty = function (host, chain, target, prop) {
-            var watcher = eui.Watcher.watch(host, chain, null, null);
-            if (watcher) {
-                var assign = function (value) {
-                    target[prop] = value;
-                };
-                watcher.setHandler(assign, null);
-                assign(watcher.getValue());
-            }
-            return watcher;
-        };
-        /**
-         * Binds a callback, <prop>handler</code> on the <code>target</code> Object, to a bindable property or peoperty chain.
-         * Callback method to invoke with an argument of the current value of <code>chain</code> when that value changes.
-         * @param host The object that hosts the property or property chain to be watched.
-         * @param chain A value specifying the property or chain to be watched. For example, when watch the property <code>host.a.b.c</code>,
-         * you need call the method like this: <code>indProperty(host, ["a","b","c"], ...)</code>
-         * @param handler method to invoke with an argument of the current value of <code>chain</code> when that value changes.
-         * @param thisObject <code>this</code> object of binding method
-         * @returns A ChangeWatcher instance, if at least one property name has been  specified to the <code>chain</code> argument; null otherwise.
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 绑定一个回调函数到要监视的对象属性上。当 host上 chain 所对应的值发生改变时，handler 方法将被自动调用。
-         * @param host 用于承载要监视的属性或属性链的对象。
-         * @param chain 用于指定要监视的属性链的值。例如，要监视属性 host.a.b.c，需按以下形式调用此方法：bindSetter(host, ["a","b","c"], ...)。
-         * @param handler 在监视的目标属性链中任何属性的值发生改变时调用的事件处理函数。
-         * @param thisObject handler 方法绑定的this对象
-         * @returns 如果已为 chain 参数至少指定了一个属性名称，则返回 Watcher 实例；否则返回 null。
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        Binding.bindHandler = function (host, chain, handler, thisObject) {
-            var watcher = eui.Watcher.watch(host, chain, handler, thisObject);
-            if (watcher) {
-                handler.call(thisObject, watcher.getValue());
-            }
-            return watcher;
-        };
-        Binding.$bindProperties = function (host, templates, chainIndex, target, prop) {
-            if (templates.length == 1 && chainIndex.length == 1) {
-                return Binding.bindProperty(host, templates[0].split("."), target, prop);
-            }
-            var assign = function () {
-                target[prop] = joinValues(templates);
-            };
-            var length = chainIndex.length;
-            var watcher;
-            for (var i = 0; i < length; i++) {
-                var index = chainIndex[i];
-                var chain = templates[index].split(".");
-                watcher = eui.Watcher.watch(host, chain, null, null);
-                if (watcher) {
-                    templates[index] = watcher;
-                    watcher.setHandler(assign, null);
-                }
-            }
-            assign();
-            return watcher;
-        };
-        return Binding;
-    }());
-    eui.Binding = Binding;
-    __reflect(Binding.prototype, "eui.Binding");
-})(eui || (eui = {}));
-//////////////////////////////////////////////////////////////////////////////////////
-//
-//  Copyright (c) 2014-present, Egret Technology.
-//  All rights reserved.
-//  Redistribution and use in source and binary forms, with or without
-//  modification, are permitted provided that the following conditions are met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//     * Neither the name of the Egret nor the
-//       names of its contributors may be used to endorse or promote products
-//       derived from this software without specific prior written permission.
-//
-//  THIS SOFTWARE IS PROVIDED BY EGRET AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
-//  OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-//  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-//  IN NO EVENT SHALL EGRET AND CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-//  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-//  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;LOSS OF USE, DATA,
-//  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-//  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-//  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-//////////////////////////////////////////////////////////////////////////////////////
-var eui;
-(function (eui) {
-    /**
-     * The ToggleButton component defines a toggle button.
-     * Clicking the button toggles it between the up and an down states.
-     * If you click the button while it is in the up state,
-     * it toggles to the down state. You must click the button again
-     * to toggle it back to the up state.
-     * <p>You can get or set this state programmatically
-     * by using the <code>selected</code> property.</p>
-     *
-     * @event egret.Event.CHANGE Dispatched when the <code>selected</code> property
-     * changes for the ToggleButton control.
-     * This event is dispatched only when the
-     * user interacts with the control by touching.
-     *
-     * @state up Button up state
-     * @state down Button down state
-     * @state disabled Button disabled state
-     * @state upAndSelected Up state when the button is selected
-     * @state downAndSelected Down state when the button is selected
-     * @state disabledAndSelected Disabled state when the button is selected
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @includeExample  extension/eui/components/ToggleButtonExample.ts
-     * @language en_US
-     */
-    /**
-     * ToggleButton 组件定义切换按钮。单击该按钮会在弹起状态和按下状态之间进行切换。
-     * 如果在按钮处于弹起状态时单击该按钮，则它会切换到按下状态。必须再次单击该按钮才可将其切换回弹起状态。
-     * <p>可以使用 <code>selected</code> 属性以编程方式获取或设置此状态。</p>
-     *
-     * @event egret.Event.CHANGE ToggleButtonBase 控件的 <code>selected</code> 属性更改时分派。
-     * 仅当用户通过触摸与控件交互时，才分派此事件。
-     *
-     * @state up 按钮弹起状态
-     * @state down 按钮按下状态
-     * @state disabled 按钮禁用状态
-     * @state upAndSelected 按钮选择时的弹起状态
-     * @state downAndSelected 按钮选择时的按下状态
-     * @state disabledAndSelected 按钮选择时的禁用状态
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @includeExample  extension/eui/components/ToggleButtonExample.ts
-     * @language zh_CN
-     */
-    var ToggleButton = (function (_super) {
-        __extends(ToggleButton, _super);
-        function ToggleButton() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            /**
-             * @private
-             */
-            _this.$selected = false;
-            /**
-             * @private
-             * 是否根据触摸事件自动变换选中状态,默认true。仅框架内使用。
-             */
-            _this.$autoSelected = true;
-            return _this;
-        }
-        Object.defineProperty(ToggleButton.prototype, "selected", {
-            /**
-             * Contains <code>true</code> if the button is in the down state,
-             * and <code>false</code> if it is in the up state.
-             *
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * 按钮处于按下状态时为 <code>true</code>，而按钮处于弹起状态时为 <code>false</code>。
-             *
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            get: function () {
-                return this.$selected;
-            },
-            set: function (value) {
-                this.$setSelected(value);
-            },
-            enumerable: true,
-            configurable: true
-        });
-        /**
-         * @private
-         *
-         * @param value
-         */
-        ToggleButton.prototype.$setSelected = function (value) {
-            value = !!value;
-            if (value === this.$selected)
-                return false;
-            this.$selected = value;
-            this.invalidateState();
-            eui.PropertyEvent.dispatchPropertyEvent(this, eui.PropertyEvent.PROPERTY_CHANGE, "selected");
-            return true;
-        };
-        /**
-         * @inheritDoc
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        ToggleButton.prototype.getCurrentState = function () {
-            var state = _super.prototype.getCurrentState.call(this);
-            if (!this.$selected) {
-                return state;
-            }
-            else {
-                var selectedState = state + "AndSelected";
-                var skin = this.skin;
-                if (skin && skin.hasState(selectedState)) {
-                    return selectedState;
-                }
-                return state == "disabled" ? "disabled" : "down";
-            }
-        };
-        /**
-         * @inheritDoc
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        ToggleButton.prototype.buttonReleased = function () {
-            if (!this.$autoSelected)
-                return;
-            this.selected = !this.$selected;
-            this.dispatchEventWith(egret.Event.CHANGE);
-        };
-        return ToggleButton;
-    }(eui.Button));
-    eui.ToggleButton = ToggleButton;
-    __reflect(ToggleButton.prototype, "eui.ToggleButton");
-    eui.registerBindable(ToggleButton.prototype, "selected");
+        return HSlider;
+    }(eui.SliderBase));
+    eui.HSlider = HSlider;
+    __reflect(HSlider.prototype, "eui.HSlider");
 })(eui || (eui = {}));
 //////////////////////////////////////////////////////////////////////////////////////
 //
@@ -10327,42 +10329,9 @@ var eui;
 //  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////
-//
-//  Copyright (c) 2014-present, Egret Technology.
-//  All rights reserved.
-//  Redistribution and use in source and binary forms, with or without
-//  modification, are permitted provided that the following conditions are met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//     * Neither the name of the Egret nor the
-//       names of its contributors may be used to endorse or promote products
-//       derived from this software without specific prior written permission.
-//
-//  THIS SOFTWARE IS PROVIDED BY EGRET AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
-//  OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-//  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-//  IN NO EVENT SHALL EGRET AND CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-//  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-//  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;LOSS OF USE, DATA,
-//  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-//  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-//  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-//////////////////////////////////////////////////////////////////////////////////////
 /// <reference path="supportClasses/DefaultAssetAdapter.ts" />
 var eui;
 (function (eui) {
-    /**
-     * @private
-     * 默认的皮肤适配器
-     */
-    var assetAdapter = new eui.DefaultAssetAdapter();
     /**
      * The Image control lets you show JPEG, PNG, and GIF files
      * at runtime. Image inherit Bitmap，so you can set the <code>bitmapData</code> property
@@ -10452,8 +10421,7 @@ var eui;
                 return this.$scale9Grid;
             },
             set: function (value) {
-                this.$scale9Grid = value;
-                this.$invalidateContentBounds();
+                this.$setScale9Grid(value);
                 this.invalidateDisplayList();
             },
             enumerable: true,
@@ -10545,11 +10513,11 @@ var eui;
             enumerable: true,
             configurable: true
         });
-        Image.prototype.$setBitmapData = function (value) {
-            if (value == this.$Bitmap[0 /* bitmapData */]) {
+        Image.prototype.$setTexture = function (value) {
+            if (value == this.$texture) {
                 return false;
             }
-            var result = _super.prototype.$setBitmapData.call(this, value);
+            var result = _super.prototype.$setTexture.call(this, value);
             this.sourceChanged = false;
             this.invalidateSize();
             this.invalidateDisplayList();
@@ -10563,37 +10531,27 @@ var eui;
             this.sourceChanged = false;
             var source = this._source;
             if (source && typeof source == "string") {
-                var adapter = egret.getImplementation("eui.IAssetAdapter");
-                if (!adapter) {
-                    adapter = assetAdapter;
-                }
-                adapter.getAsset(this._source, this.contentChanged, this);
+                eui.getAssets(this._source, function (data) {
+                    if (source !== this._source)
+                        return;
+                    if (!egret.is(data, "egret.Texture")) {
+                        return;
+                    }
+                    this.$setTexture(data);
+                    if (data) {
+                        this.dispatchEventWith(egret.Event.COMPLETE);
+                    }
+                    else if (true) {
+                        egret.$warn(2301, source);
+                    }
+                }, this);
             }
             else {
-                this.$setBitmapData(source);
-            }
-        };
-        /**
-         * @private
-         * 资源发生改变
-         */
-        Image.prototype.contentChanged = function (data, source) {
-            if (source !== this._source)
-                return;
-            if (!egret.is(data, "egret.Texture")) {
-                return;
-            }
-            this.$setBitmapData(data);
-            if (data) {
-                this.dispatchEventWith(egret.Event.COMPLETE);
-            }
-            else if (true) {
-                egret.$warn(2301, source);
+                this.$setTexture(source);
             }
         };
         Image.prototype.$measureContentBounds = function (bounds) {
-            var values = this.$Bitmap;
-            var image = this.$Bitmap[0 /* bitmapData */];
+            var image = this.$texture;
             if (image) {
                 var uiValues = this.$UIComponent;
                 var width = uiValues[10 /* width */];
@@ -10617,25 +10575,6 @@ var eui;
             }
         };
         /**
-         * @private
-         *
-         * @param context
-         */
-        Image.prototype.$render = function () {
-            var image = this.$Bitmap[0 /* bitmapData */];
-            if (!image) {
-                return;
-            }
-            var uiValues = this.$UIComponent;
-            var width = uiValues[10 /* width */];
-            var height = uiValues[11 /* height */];
-            if (width === 0 || height === 0) {
-                return;
-            }
-            var values = this.$Bitmap;
-            egret.sys.BitmapNode.$updateTextureData(this.$renderNode, values[1 /* image */], values[2 /* bitmapX */], values[3 /* bitmapY */], values[4 /* bitmapWidth */], values[5 /* bitmapHeight */], values[6 /* offsetX */], values[7 /* offsetY */], values[8 /* textureWidth */], values[9 /* textureHeight */], width, height, values[13 /* sourceWidth */], values[14 /* sourceHeight */], this.scale9Grid || values[0 /* bitmapData */]["scale9Grid"], this.$fillMode, values[10 /* smoothing */]);
-        };
-        /**
          * @copy eui.UIComponent#createChildren
          *
          * @version Egret 2.4
@@ -10646,6 +10585,16 @@ var eui;
             if (this.sourceChanged) {
                 this.parseSource();
             }
+        };
+        /**
+         * @private
+         * 设置组件的宽高。此方法不同于直接设置width,height属性，
+         * 不会影响显式标记尺寸属性
+         */
+        Image.prototype.setActualSize = function (w, h) {
+            eui.sys.UIComponentImpl.prototype["setActualSize"].call(this, w, h);
+            _super.prototype.$setWidth.call(this, w);
+            _super.prototype.$setHeight.call(this, h);
         };
         /**
          * @copy eui.UIComponent#childrenCreated
@@ -10677,9 +10626,9 @@ var eui;
          * @platform Web,Native
          */
         Image.prototype.measure = function () {
-            var bitmapData = this.$Bitmap[0 /* bitmapData */];
-            if (bitmapData) {
-                this.setMeasuredSize(bitmapData.$getTextureWidth(), bitmapData.$getTextureHeight());
+            var texture = this.$texture;
+            if (texture) {
+                this.setMeasuredSize(texture.$getTextureWidth(), texture.$getTextureHeight());
             }
             else {
                 this.setMeasuredSize(0, 0);
@@ -10693,7 +10642,7 @@ var eui;
          * @platform Web,Native
          */
         Image.prototype.updateDisplayList = function (unscaledWidth, unscaledHeight) {
-            this.$invalidateContentBounds();
+            this.$renderDirty = true;
         };
         /**
          * @copy eui.UIComponent#invalidateParentLayout
@@ -10818,6 +10767,282 @@ var eui;
     __reflect(Image.prototype, "eui.Image", ["eui.UIComponent", "egret.DisplayObject"]);
     eui.sys.implementUIComponent(Image, egret.Bitmap);
     eui.registerProperty(Image, "scale9Grid", "egret.Rectangle");
+})(eui || (eui = {}));
+//////////////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright (c) 2014-present, Egret Technology.
+//  All rights reserved.
+//  Redistribution and use in source and binary forms, with or without
+//  modification, are permitted provided that the following conditions are met:
+//
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above copyright
+//       notice, this list of conditions and the following disclaimer in the
+//       documentation and/or other materials provided with the distribution.
+//     * Neither the name of the Egret nor the
+//       names of its contributors may be used to endorse or promote products
+//       derived from this software without specific prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY EGRET AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
+//  OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+//  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL EGRET AND CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+//  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+//  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;LOSS OF USE, DATA,
+//  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+//  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+//  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+//////////////////////////////////////////////////////////////////////////////////////
+/// <reference path="../utils/registerBindable.ts" />
+var eui;
+(function (eui) {
+    /**
+     * The ItemRenderer class is the base class for item renderers.
+     *
+     * @state up Up state
+     * @state down Down state
+     * @state upAndSelected Up state when the button is selected
+     * @state downAndSelected Down state when the button is selected
+     * @version Egret 2.4
+     * @version eui 1.0
+     * @platform Web,Native
+     * @includeExample  extension/eui/components/ItemRendererExample.ts
+     * @language en_US
+     */
+    /**
+     * ItemRenderer 类是项呈示器的基类。
+     *
+     * @state up 弹起状态
+     * @state down 按下状态
+     * @state upAndSelected 选择时的弹起状态
+     * @state downAndSelected 选择时的按下状态
+     * @version Egret 2.4
+     * @version eui 1.0
+     * @platform Web,Native
+     * @includeExample  extension/eui/components/ItemRendererExample.ts
+     * @language zh_CN
+     */
+    var ItemRenderer = (function (_super) {
+        __extends(ItemRenderer, _super);
+        /**
+         * Constructor.
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 构造函数。
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        function ItemRenderer() {
+            var _this = _super.call(this) || this;
+            /**
+             * @private
+             */
+            _this._data = null;
+            /**
+             * @private
+             */
+            _this._selected = false;
+            /**
+             * The index of the item in the data provider
+             * of the host component of the item renderer.
+             *
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language en_US
+             */
+            /**
+             * 项呈示器的数据提供程序中的项目索引。
+             *
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language zh_CN
+             */
+            _this.itemIndex = -1;
+            /**
+             * @private
+             * 指示第一次分派 TouchEvent.TOUCH_BEGIN 时，触摸点是否在按钮上。
+             */
+            _this.touchCaptured = false;
+            _this.addEventListener(egret.TouchEvent.TOUCH_BEGIN, _this.onTouchBegin, _this);
+            return _this;
+        }
+        Object.defineProperty(ItemRenderer.prototype, "data", {
+            /**
+             * The data to render or edit.
+             *
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language en_US
+             */
+            /**
+             * 要呈示或编辑的数据。
+             *
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language zh_CN
+             */
+            get: function () {
+                return this._data;
+            },
+            set: function (value) {
+                this._data = value;
+                eui.PropertyEvent.dispatchPropertyEvent(this, eui.PropertyEvent.PROPERTY_CHANGE, "data");
+                this.dataChanged();
+            },
+            enumerable: true,
+            configurable: true
+        });
+        /**
+         * Update the view when the <code>data</code> property changes.
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 当数据改变时，更新视图。
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        ItemRenderer.prototype.dataChanged = function () {
+        };
+        Object.defineProperty(ItemRenderer.prototype, "selected", {
+            /**
+             * Contains <code>true</code> if the item renderer
+             * can show itself as selected.
+             *
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language en_US
+             */
+            /**
+             * 如果项呈示器可以将其自身显示为已选中，则为 true。
+             *
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language zh_CN
+             */
+            get: function () {
+                return this._selected;
+            },
+            set: function (value) {
+                if (this._selected == value)
+                    return;
+                this._selected = value;
+                this.invalidateState();
+            },
+            enumerable: true,
+            configurable: true
+        });
+        /**
+         * Dispatched when an event of some kind occurred that canceled the touch.
+         * @version Egret 3.0.1
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 由于某个事件取消了触摸时触发
+         * @version Egret 3.0.1
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        ItemRenderer.prototype.onTouchCancle = function (event) {
+            this.touchCaptured = false;
+            var stage = event.$currentTarget;
+            stage.removeEventListener(egret.TouchEvent.TOUCH_CANCEL, this.onTouchCancle, this);
+            stage.removeEventListener(egret.TouchEvent.TOUCH_END, this.onStageTouchEnd, this);
+            this.invalidateState();
+        };
+        /**
+         * Handles <code>TouchEvent.TOUCH_BEGIN</code> events
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 触碰开始时触发事件
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        ItemRenderer.prototype.onTouchBegin = function (event) {
+            if (!this.$stage) {
+                return;
+            }
+            this.$stage.addEventListener(egret.TouchEvent.TOUCH_CANCEL, this.onTouchCancle, this);
+            this.$stage.addEventListener(egret.TouchEvent.TOUCH_END, this.onStageTouchEnd, this);
+            this.touchCaptured = true;
+            this.invalidateState();
+            event.updateAfterEvent();
+        };
+        /**
+         * @private
+         * 舞台上触摸弹起事件
+         */
+        ItemRenderer.prototype.onStageTouchEnd = function (event) {
+            var stage = event.$currentTarget;
+            stage.removeEventListener(egret.TouchEvent.TOUCH_CANCEL, this.onTouchCancle, this);
+            stage.removeEventListener(egret.TouchEvent.TOUCH_END, this.onStageTouchEnd, this);
+            this.touchCaptured = false;
+            this.invalidateState();
+        };
+        /**
+         * @inheritDoc
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         */
+        ItemRenderer.prototype.getCurrentState = function () {
+            var state = "up";
+            if (!this.enabled) {
+                state = "disabled";
+            }
+            if (this.touchCaptured) {
+                state = "down";
+            }
+            if (this._selected) {
+                var selectedState = state + "AndSelected";
+                var skin = this.skin;
+                if (skin && skin.hasState(selectedState)) {
+                    return selectedState;
+                }
+                return state == "disabled" ? "disabled" : "down";
+            }
+            return state;
+        };
+        return ItemRenderer;
+    }(eui.Component));
+    eui.ItemRenderer = ItemRenderer;
+    __reflect(ItemRenderer.prototype, "eui.ItemRenderer", ["eui.IItemRenderer"]);
+    eui.registerBindable(ItemRenderer.prototype, "data");
 })(eui || (eui = {}));
 //////////////////////////////////////////////////////////////////////////////////////
 //
@@ -11134,8 +11359,8 @@ var eui;
          * @private
          *
          */
-        Label.prototype.$invalidateContentBounds = function () {
-            _super.prototype.$invalidateContentBounds.call(this);
+        Label.prototype.$invalidateTextField = function () {
+            _super.prototype.$invalidateTextField.call(this);
             this.invalidateSize();
         };
         /**
@@ -13438,6 +13663,9 @@ var eui;
             _this.fillColor = fillColor;
             return _this;
         }
+        Rect.prototype.createNativeDisplayObject = function () {
+            this.$nativeDisplayObject = new egret_native.NativeDisplayObject(8 /* GRAPHICS */);
+        };
         Object.defineProperty(Rect.prototype, "graphics", {
             get: function () {
                 return this.$graphics;
@@ -13672,7 +13900,15 @@ var eui;
                 g.drawRoundRect(this.$strokeWeight, this.$strokeWeight, unscaledWidth - this.$strokeWeight * 2, unscaledHeight - this.$strokeWeight * 2, this.$ellipseWidth, this.$ellipseHeight);
             }
             g.endFill();
-            this.$invalidateContentBounds();
+        };
+        /**
+         * @private
+         */
+        Rect.prototype.$onRemoveFromStage = function () {
+            _super.prototype.$onRemoveFromStage.call(this);
+            if (this.$graphics) {
+                this.$graphics.$onRemoveFromStage();
+            }
         };
         return Rect;
     }(eui.Component));
@@ -14140,6 +14376,9 @@ var eui;
          * @param event
          */
         Scroller.prototype.onTouchBeginCapture = function (event) {
+            if (!this.$stage) {
+                return;
+            }
             this.$Scroller[12 /* touchCancle */] = false;
             var canScroll = this.checkScrollPolicy();
             if (!canScroll) {
@@ -14153,6 +14392,9 @@ var eui;
          */
         Scroller.prototype.onTouchEndCapture = function (event) {
             if (this.$Scroller[12 /* touchCancle */]) {
+                event.$bubbles = false;
+                this.dispatchBubbleEvent(event);
+                event.$bubbles = true;
                 event.stopPropagation();
                 this.onTouchEnd(event);
             }
@@ -14163,6 +14405,9 @@ var eui;
          */
         Scroller.prototype.onTouchTapCapture = function (event) {
             if (this.$Scroller[12 /* touchCancle */]) {
+                event.$bubbles = false;
+                this.dispatchBubbleEvent(event);
+                event.$bubbles = true;
                 event.stopPropagation();
             }
         };
@@ -14243,6 +14488,7 @@ var eui;
             stage.addEventListener(egret.TouchEvent.TOUCH_END, this.onTouchEnd, this, true);
             this.addEventListener(egret.TouchEvent.TOUCH_CANCEL, this.onTouchCancel, this);
             this.addEventListener(egret.Event.REMOVED_FROM_STAGE, this.onRemoveListeners, this);
+            this.tempStage = stage;
         };
         /**
          * @private
@@ -14318,13 +14564,15 @@ var eui;
          * @private
          * @param event
          */
-        Scroller.prototype.dispatchCancelEvent = function (event) {
+        Scroller.prototype.dispatchBubbleEvent = function (event) {
             var viewport = this.$Scroller[10 /* viewport */];
             if (!viewport) {
                 return;
             }
-            var cancelEvent = new egret.TouchEvent(egret.TouchEvent.TOUCH_CANCEL, event.bubbles, event.cancelable);
+            var cancelEvent = egret.Event.create(egret.TouchEvent, event.type, event.bubbles, event.cancelable);
+            cancelEvent.$initTo(event.$stageX, event.$stageY, event.touchPointID);
             var target = this.downTarget;
+            cancelEvent.$setTarget(target);
             var list = this.$getPropagationList(target);
             var length = list.length;
             var targetIndex = list.length * 0.5;
@@ -14335,7 +14583,36 @@ var eui;
                     break;
                 }
             }
-            list.splice(0, startIndex + 1);
+            list.splice(0, list.length - startIndex + 1);
+            targetIndex = 0;
+            this.$dispatchPropagationEvent(cancelEvent, list, targetIndex);
+            egret.Event.release(cancelEvent);
+        };
+        /**
+         * @private
+         * @param event
+         */
+        Scroller.prototype.dispatchCancelEvent = function (event) {
+            var viewport = this.$Scroller[10 /* viewport */];
+            if (!viewport) {
+                return;
+            }
+            var cancelEvent = egret.Event.create(egret.TouchEvent, egret.TouchEvent.TOUCH_CANCEL, event.bubbles, event.cancelable);
+            cancelEvent.$initTo(event.$stageX, event.$stageY, event.touchPointID);
+            var target = this.downTarget;
+            cancelEvent.$setTarget(target);
+            var list = this.$getPropagationList(target);
+            var length = list.length;
+            var targetIndex = list.length * 0.5;
+            var startIndex = -1;
+            for (var i = 0; i < length; i++) {
+                if (list[i] === viewport) {
+                    startIndex = i;
+                    break;
+                }
+            }
+            list.splice(0, startIndex + 1 - 2);
+            list.splice(list.length - 1 - startIndex + 2, startIndex + 1 - 2);
             targetIndex -= startIndex + 1;
             this.$dispatchPropagationEvent(cancelEvent, list, targetIndex);
             egret.Event.release(cancelEvent);
@@ -14361,11 +14638,11 @@ var eui;
          * @private
          */
         Scroller.prototype.onRemoveListeners = function () {
-            var stage = this.$stage;
+            var stage = this.tempStage || this.$stage;
             this.removeEventListener(egret.TouchEvent.TOUCH_MOVE, this.onTouchMove, this);
             stage.removeEventListener(egret.TouchEvent.TOUCH_END, this.onTouchEnd, this, true);
             stage.removeEventListener(egret.TouchEvent.TOUCH_MOVE, this.onTouchMove, this);
-            this.removeEventListener(egret.TouchEvent.TOUCH_CANCEL, this.onTouchCancel, true);
+            this.removeEventListener(egret.TouchEvent.TOUCH_CANCEL, this.onTouchCancel, this);
             this.removeEventListener(egret.Event.REMOVED_FROM_STAGE, this.onRemoveListeners, this);
         };
         /**
@@ -14374,7 +14651,10 @@ var eui;
          * @param scrollPos
          */
         Scroller.prototype.horizontalUpdateHandler = function (scrollPos) {
-            this.$Scroller[10 /* viewport */].scrollH = scrollPos;
+            var viewport = this.$Scroller[10 /* viewport */];
+            if (viewport) {
+                viewport.scrollH = scrollPos;
+            }
             this.dispatchEventWith(egret.Event.CHANGE);
         };
         /**
@@ -14383,7 +14663,10 @@ var eui;
          * @param scrollPos
          */
         Scroller.prototype.verticalUpdateHandler = function (scrollPos) {
-            this.$Scroller[10 /* viewport */].scrollV = scrollPos;
+            var viewport = this.$Scroller[10 /* viewport */];
+            if (viewport) {
+                viewport.scrollV = scrollPos;
+            }
             this.dispatchEventWith(egret.Event.CHANGE);
         };
         /**
@@ -14479,30 +14762,30 @@ var eui;
                 }
             }
         };
+        /**
+         * The threshold value(in pixels) trigger the rolling.
+         * when the touch points deviate from the initial touch point than this value will trigger the rolling.
+         *
+         * @default 5
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 开始触发滚动的阈值（以像素为单位），当触摸点偏离初始触摸点的距离超过这个值时才会触发滚动。
+         *
+         * @default 5
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        Scroller.scrollThreshold = 5;
         return Scroller;
     }(eui.Component));
-    /**
-     * The threshold value(in pixels) trigger the rolling.
-     * when the touch points deviate from the initial touch point than this value will trigger the rolling.
-     *
-     * @default 5
-     *
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 开始触发滚动的阈值（以像素为单位），当触摸点偏离初始触摸点的距离超过这个值时才会触发滚动。
-     *
-     * @default 5
-     *
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    Scroller.scrollThreshold = 5;
     eui.Scroller = Scroller;
     __reflect(Scroller.prototype, "eui.Scroller");
     eui.registerProperty(Scroller, "viewport", "eui.IViewport", true);
@@ -15199,6 +15482,7 @@ var eui;
              */
             get: function () {
                 if (this.textDisplay) {
+                    //return this.textDisplay.maxHeight;
                 }
                 var v = this.$TextInput[5 /* maxHeight */];
                 return v ? v : 100000;
@@ -15448,106 +15732,52 @@ var eui;
 var eui;
 (function (eui) {
     /**
-     * The HSlider (horizontal slider) control lets users select a value
-     * by moving a slider thumb between the end points of the slider track.
-     * The current value of the slider is determined by the relative location of the thumb between
-     * the end points of the slider, corresponding to the slider's minimum and maximum values.
+     * The CheckBox component consists of an optional label and a small box
+     * that can contain a check mark or not.<p/>
      *
-     * @includeExample  extension/eui/components/HSliderExample.ts
+     * When a user clicks a CheckBox component or its associated text,
+     * the CheckBox component sets its <code>selected</code> property
+     * to <code>true</code> for checked, and to <code>false</code> for unchecked.
+     *
      * @version Egret 2.4
      * @version eui 1.0
      * @platform Web,Native
+     * @includeExample extension/eui/components/CheckboxExample.ts
      * @language en_US
      */
     /**
-     * 使用 HSlider（水平滑块）控件，用户可通过在滑块轨道的端点之间移动滑块来选择值。
-     * 滑块的当前值由滑块端点（对应于滑块的最小值和最大值）之间滑块的相对位置确定。
+     * CheckBox 组件包含一个可选标签和一个小方框，该方框内可以包含/不包含复选标记。<p/>
+     * 用户单击 CheckBox 组件或其关联文本时，CheckBox 组件会将其 selected 属性设置为 true（表示选中）或 false（表示取消选中）。
      *
-     * @includeExample  extension/eui/components/HSliderExample.ts
      * @version Egret 2.4
      * @version eui 1.0
      * @platform Web,Native
+     * @includeExample extension/eui/components/CheckboxExample.ts
      * @language zh_CN
      */
-    var HSlider = (function (_super) {
-        __extends(HSlider, _super);
+    var CheckBox = (function (_super) {
+        __extends(CheckBox, _super);
         /**
          * Constructor.
-         *
          * @version Egret 2.4
          * @version eui 1.0
          * @platform Web,Native
          * @language en_US
          */
         /**
-         * 构造函数。
-         *
+         * 创建一个CheckBox
          * @version Egret 2.4
          * @version eui 1.0
          * @platform Web,Native
          * @language zh_CN
          */
-        function HSlider() {
+        function CheckBox() {
             return _super.call(this) || this;
         }
-        /**
-         * @inheritDoc
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        HSlider.prototype.pointToValue = function (x, y) {
-            if (!this.thumb || !this.track)
-                return 0;
-            var values = this.$Range;
-            var range = values[0 /* maximum */] - values[2 /* minimum */];
-            var thumbRange = this.getThumbRange();
-            return values[2 /* minimum */] + (thumbRange != 0 ? (x / thumbRange) * range : 0);
-        };
-        /**
-         * @private
-         *
-         * @returns
-         */
-        HSlider.prototype.getThumbRange = function () {
-            var bounds = egret.$TempRectangle;
-            this.track.getLayoutBounds(bounds);
-            var thumbRange = bounds.width;
-            this.thumb.getLayoutBounds(bounds);
-            return thumbRange - bounds.width;
-        };
-        /**
-         * @inheritDoc
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        HSlider.prototype.updateSkinDisplayList = function () {
-            if (!this.thumb || !this.track)
-                return;
-            var values = this.$Range;
-            var thumbRange = this.getThumbRange();
-            var range = values[0 /* maximum */] - values[2 /* minimum */];
-            var thumbPosTrackX = (range > 0) ? ((this.pendingValue - values[2 /* minimum */]) / range) * thumbRange : 0;
-            var thumbPos = this.track.localToGlobal(thumbPosTrackX, 0, egret.$TempPoint);
-            var thumbPosX = thumbPos.x;
-            var thumbPosY = thumbPos.y;
-            var thumbPosParentX = this.thumb.$parent.globalToLocal(thumbPosX, thumbPosY, egret.$TempPoint).x;
-            var bounds = egret.$TempRectangle;
-            this.thumb.getLayoutBounds(bounds);
-            this.thumb.setLayoutBoundsPosition(Math.round(thumbPosParentX), bounds.y);
-            if (this.trackHighlight && this.trackHighlight.$parent) {
-                var trackHighlightX = this.trackHighlight.$parent.globalToLocal(thumbPosX, thumbPosY, egret.$TempPoint).x - thumbPosTrackX;
-                this.trackHighlight.x = Math.round(trackHighlightX);
-                this.trackHighlight.width = Math.round(thumbPosTrackX);
-            }
-        };
-        return HSlider;
-    }(eui.SliderBase));
-    eui.HSlider = HSlider;
-    __reflect(HSlider.prototype, "eui.HSlider");
+        return CheckBox;
+    }(eui.ToggleButton));
+    eui.CheckBox = CheckBox;
+    __reflect(CheckBox.prototype, "eui.CheckBox");
 })(eui || (eui = {}));
 //////////////////////////////////////////////////////////////////////////////////////
 //
@@ -16950,74 +17180,346 @@ var eui;
 //////////////////////////////////////////////////////////////////////////////////////
 var eui;
 (function (eui) {
+    function joinValues(templates) {
+        var first = templates[0];
+        var value = first instanceof eui.Watcher ? first.getValue() : first;
+        var length = templates.length;
+        for (var i = 1; i < length; i++) {
+            var item = templates[i];
+            if (item instanceof eui.Watcher) {
+                item = item.getValue();
+            }
+            value += item;
+        }
+        return value;
+    }
     /**
-     * The HScrollBar (horizontal scrollbar) control lets you control
-     * the portion of data that is displayed when there is too much data
-     * to fit horizontally in a display area.
-     *
-     * <p>Although you can use the HScrollBar control as a stand-alone control,
-     * you usually combine it as part of another group of components to
-     * provide scrolling functionality.</p>
-     *
-     * @includeExample  extension/eui/components/HScrollBarExample.ts
+     * The Binding class defines utility methods for performing data binding.
+     * You can use the methods defined in this class to configure data bindings.
      * @version Egret 2.4
      * @version eui 1.0
      * @platform Web,Native
+     * @includeExample extension/eui/binding/BindingExample.ts
      * @language en_US
      */
     /**
-     * HScrollBar（水平 ScrollBar）控件可以在因数据太多而不能在显示区域中以水平方向完全显示时控制显示的数据部分。
-     * <p>虽然 HScrollBar 控件可以单独使用，但通常将它与其他组件一起使用来提供滚动功能。</p>
-     *
-     * @includeExample  extension/eui/components/HScrollBarExample.ts
+     * 绑定工具类，用于执行数据绑定用的方法集。您可以使用此类中定义的方法来配置数据绑定。
      * @version Egret 2.4
      * @version eui 1.0
      * @platform Web,Native
+     * @includeExample extension/eui/binding/BindingExample.ts
      * @language zh_CN
      */
-    var HScrollBar = (function (_super) {
-        __extends(HScrollBar, _super);
-        function HScrollBar() {
-            return _super !== null && _super.apply(this, arguments) || this;
+    var Binding = (function () {
+        function Binding() {
         }
         /**
-         * @inheritDoc
-         *
+         * Binds a property, <prop>prop</code> on the <code>target</code> Object, to a bindable property or peoperty chain.
+         * @param host The object that hosts the property or property chain to be watched.
+         * The <code>host</code> maintains a list of <code>targets</code> to update theirs <code>prop</code> when <code>chain</code> changes.
+         * @param chain A value specifying the property or chain to be watched. For example, when watch the property <code>host.a.b.c</code>,
+         * you need call the method like this: <code>indProperty(host, ["a","b","c"], ...)</code>
+         * @param target The Object defining the property to be bound to <code>chain</code>.
+         * @param prop The name of the public property defined in the <code>site</code> Object to be bound.
+         * @returns A ChangeWatcher instance, if at least one property name has been specified
+         * to the <code>chain</code> argument; null otherwise.
          * @version Egret 2.4
          * @version eui 1.0
          * @platform Web,Native
+         * @language en_US
          */
-        HScrollBar.prototype.updateDisplayList = function (unscaledWidth, unscaledHeight) {
-            _super.prototype.updateDisplayList.call(this, unscaledWidth, unscaledHeight);
-            var thumb = this.thumb;
-            var viewport = this.$viewport;
-            if (!thumb || !viewport) {
-                return;
+        /**
+         * 绑定一个对象的属性值到要监视的对象属性上。
+         * @param host 用于承载要监视的属性或属性链的对象。
+         * 当 <code>host</code>上<code>chain</code>所对应的值发生改变时，<code>target</code>上的<code>prop</code>属性将被自动更新。
+         * @param chain 用于指定要监视的属性链的值。例如，要监视属性 <code>host.a.b.c</code>，需按以下形式调用此方法：<code>bindProperty(host, ["a","b","c"], ...)。</code>
+         * @param target 本次绑定要更新的目标对象。
+         * @param prop 本次绑定要更新的目标属性名称。
+         * @returns 如果已为 chain 参数至少指定了一个属性名称，则返回 Watcher 实例；否则返回 null。
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        Binding.bindProperty = function (host, chain, target, prop) {
+            var watcher = eui.Watcher.watch(host, chain, null, null);
+            if (watcher) {
+                var assign = function (value) {
+                    target[prop] = value;
+                };
+                watcher.setHandler(assign, null);
+                assign(watcher.getValue());
             }
-            var bounds = egret.$TempRectangle;
-            thumb.getPreferredBounds(bounds);
-            var thumbWidth = bounds.width;
-            var thumbY = bounds.y;
-            var hsp = viewport.scrollH;
-            var contentWidth = viewport.contentWidth;
-            var width = viewport.width;
-            if (hsp <= 0) {
-                var scaleWidth = thumbWidth * (1 - (-hsp) / (width * 0.5));
-                scaleWidth = Math.max(5, Math.round(scaleWidth));
-                thumb.setLayoutBoundsSize(scaleWidth, NaN);
-                thumb.setLayoutBoundsPosition(0, thumbY);
+            return watcher;
+        };
+        /**
+         * Binds a callback, <prop>handler</code> on the <code>target</code> Object, to a bindable property or peoperty chain.
+         * Callback method to invoke with an argument of the current value of <code>chain</code> when that value changes.
+         * @param host The object that hosts the property or property chain to be watched.
+         * @param chain A value specifying the property or chain to be watched. For example, when watch the property <code>host.a.b.c</code>,
+         * you need call the method like this: <code>indProperty(host, ["a","b","c"], ...)</code>
+         * @param handler method to invoke with an argument of the current value of <code>chain</code> when that value changes.
+         * @param thisObject <code>this</code> object of binding method
+         * @returns A ChangeWatcher instance, if at least one property name has been  specified to the <code>chain</code> argument; null otherwise.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 绑定一个回调函数到要监视的对象属性上。当 host上 chain 所对应的值发生改变时，handler 方法将被自动调用。
+         * @param host 用于承载要监视的属性或属性链的对象。
+         * @param chain 用于指定要监视的属性链的值。例如，要监视属性 host.a.b.c，需按以下形式调用此方法：bindSetter(host, ["a","b","c"], ...)。
+         * @param handler 在监视的目标属性链中任何属性的值发生改变时调用的事件处理函数。
+         * @param thisObject handler 方法绑定的this对象
+         * @returns 如果已为 chain 参数至少指定了一个属性名称，则返回 Watcher 实例；否则返回 null。
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        Binding.bindHandler = function (host, chain, handler, thisObject) {
+            var watcher = eui.Watcher.watch(host, chain, handler, thisObject);
+            if (watcher) {
+                handler.call(thisObject, watcher.getValue());
             }
-            else if (hsp >= contentWidth - width) {
-                var scaleWidth = thumbWidth * (1 - (hsp - contentWidth + width) / (width * 0.5));
-                scaleWidth = Math.max(5, Math.round(scaleWidth));
-                thumb.setLayoutBoundsSize(scaleWidth, NaN);
-                thumb.setLayoutBoundsPosition(unscaledWidth - scaleWidth, thumbY);
+            return watcher;
+        };
+        Binding.$bindProperties = function (host, templates, chainIndex, target, prop) {
+            if (templates.length == 1 && chainIndex.length == 1) {
+                return Binding.bindProperty(host, templates[0].split("."), target, prop);
+            }
+            var assign = function () {
+                target[prop] = joinValues(templates);
+            };
+            var length = chainIndex.length;
+            var watcher;
+            for (var i = 0; i < length; i++) {
+                var index = chainIndex[i];
+                var chain = templates[index].split(".");
+                watcher = eui.Watcher.watch(host, chain, null, null);
+                if (watcher) {
+                    templates[index] = watcher;
+                    watcher.setHandler(assign, null);
+                }
+            }
+            assign();
+            return watcher;
+        };
+        return Binding;
+    }());
+    eui.Binding = Binding;
+    __reflect(Binding.prototype, "eui.Binding");
+})(eui || (eui = {}));
+//////////////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright (c) 2014-present, Egret Technology.
+//  All rights reserved.
+//  Redistribution and use in source and binary forms, with or without
+//  modification, are permitted provided that the following conditions are met:
+//
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above copyright
+//       notice, this list of conditions and the following disclaimer in the
+//       documentation and/or other materials provided with the distribution.
+//     * Neither the name of the Egret nor the
+//       names of its contributors may be used to endorse or promote products
+//       derived from this software without specific prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY EGRET AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
+//  OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+//  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL EGRET AND CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+//  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+//  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;LOSS OF USE, DATA,
+//  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+//  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+//  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+//////////////////////////////////////////////////////////////////////////////////////
+/// <reference path="../utils/registerProperty.ts" />
+/// <reference path="../utils/registerBindable.ts" />
+var eui;
+(function (eui) {
+    /**
+     * The ArrayCollection class is a wrapper class that exposes an <code>any[]</code> as a collection that can be
+     * accessed and manipulated using the methods and properties of the <code>ICollection</code> interfaces.
+     * ArrayCollection can notify the view to update item when data source changed.
+     *
+     * @event eui.CollectionEvent.COLLECTION_CHANGE Dispatched when the ArrayCollection has been updated in some way.
+     *
+     * @defaultProperty source
+     * @version Egret 2.4
+     * @version eui 1.0
+     * @platform Web,Native
+     * @includeExample extension/eui/collections/ArrayCollectionExample.ts
+     * @language en_US
+     */
+    /**
+     * ArrayCollection 类是数组的集合类数据结构包装器，可使用<code>ICollection</code>接口的方法和属性对其进行访问和处理。
+     * 使用这种数据结构包装普通数组，能在数据源发生改变的时候主动通知视图刷新变更数据项。
+     *
+     * @event eui.CollectionEvent.COLLECTION_CHANGE 当 ArrayCollection 更新的的时候会派发此事件。
+     *
+     * @defaultProperty source
+     * @version Egret 2.4
+     * @version eui 1.0
+     * @platform Web,Native
+     * @includeExample extension/eui/collections/ArrayCollectionExample.ts
+     * @language zh_CN
+     */
+    var ArrayCollection = (function (_super) {
+        __extends(ArrayCollection, _super);
+        /**
+         * Constructor. <p/>
+         * Creates a new ArrayCollection using the specified source array.
+         * If no array is specified an empty array will be used.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 构造函数。<p/>
+         * 用指定的原始数组创建一个 ArrayCollection 实例。
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        function ArrayCollection(source) {
+            var _this = _super.call(this) || this;
+            if (source) {
+                _this._source = source;
             }
             else {
-                var thumbX = (unscaledWidth - thumbWidth) * hsp / (contentWidth - width);
-                thumb.setLayoutBoundsSize(NaN, NaN);
-                thumb.setLayoutBoundsPosition(thumbX, thumbY);
+                _this._source = [];
             }
+            return _this;
+        }
+        Object.defineProperty(ArrayCollection.prototype, "source", {
+            /**
+             * The source of data in the ArrayCollection.
+             * The ArrayCollection object does not represent any changes that you make
+             * directly to the source array. Always use the ICollection methods to view the collection.
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language en_US
+             */
+            /**
+             * 数据源
+             * 通常情况下请不要直接调用Array的方法操作数据源，否则对应的视图无法收到数据改变的通知。通常都是通过ICollection的接口方法来查看数据。
+             * 若对数据源进行了修改，请手动调用refresh()方法刷新数据。
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             * @language zh_CN
+             */
+            get: function () {
+                return this._source;
+            },
+            set: function (value) {
+                if (!value)
+                    value = [];
+                this._source = value;
+                this.dispatchCoEvent(eui.CollectionEventKind.RESET);
+            },
+            enumerable: true,
+            configurable: true
+        });
+        /**
+         * Applies the sort and filter to the view.
+         * The ArrayCollection does not detect source data changes automatically,
+         * so you must call the <code>refresh()</code>
+         * method to update the view after changing the source data.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 在对数据源进行排序或过滤操作后可以手动调用此方法刷新所有数据,以更新视图。
+         * ArrayCollection 不会自动检原始数据进行了改变,所以你必须调用<code>refresh()</code>方法去更新显示。
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        ArrayCollection.prototype.refresh = function () {
+            this.dispatchCoEvent(eui.CollectionEventKind.REFRESH);
+        };
+        Object.defineProperty(ArrayCollection.prototype, "length", {
+            //--------------------------------------------------------------------------
+            //
+            // ICollection接口实现方法
+            //
+            //--------------------------------------------------------------------------
+            /**
+             * @inheritDoc
+             *
+             * @version Egret 2.4
+             * @version eui 1.0
+             * @platform Web,Native
+             */
+            get: function () {
+                return this._source.length;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        /**
+         * Adds the specified item to the end of the list.
+         * Equivalent to <code>addItemAt(item, length)</code>.
+         * @param item The item to add.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 向列表末尾添加指定项目。等效于 <code>addItemAt(item, length)</code>。
+         * @param item 要被添加的项。
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        ArrayCollection.prototype.addItem = function (item) {
+            this._source.push(item);
+            this.dispatchCoEvent(eui.CollectionEventKind.ADD, this._source.length - 1, -1, [item]);
+        };
+        /**
+         * Adds the item at the specified index.
+         * The index of any item greater than the index of the added item is increased by one.
+         * If the the specified index is less than zero or greater than the length
+         * of the list, a Error which code is 1007 is thrown.
+         * @param item The item to place at the index.
+         * @param index The index at which to place the item.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 在指定的索引处添加项目。
+         * 任何大于已添加项目的索引的项目索引都会增加 1。
+         * 如果指定的索引比0小或者比最大长度要大。则会抛出1007异常。
+         * @param item 要添加的项
+         * @param index 要添加的指定索引位置
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        ArrayCollection.prototype.addItemAt = function (item, index) {
+            if (index < 0 || index > this._source.length) {
+                true && egret.$error(1007);
+            }
+            this._source.splice(index, 0, item);
+            this.dispatchCoEvent(eui.CollectionEventKind.ADD, index, -1, [item]);
         };
         /**
          * @inheritDoc
@@ -17026,18 +17528,167 @@ var eui;
          * @version eui 1.0
          * @platform Web,Native
          */
-        HScrollBar.prototype.onPropertyChanged = function (event) {
-            switch (event.property) {
-                case "scrollH":
-                case "contentWidth":
-                    this.invalidateDisplayList();
-                    break;
+        ArrayCollection.prototype.getItemAt = function (index) {
+            return this._source[index];
+        };
+        /**
+         * @inheritDoc
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         */
+        ArrayCollection.prototype.getItemIndex = function (item) {
+            var length = this._source.length;
+            for (var i = 0; i < length; i++) {
+                if (this._source[i] === item) {
+                    return i;
+                }
+            }
+            return -1;
+        };
+        /**
+         * Notifies the view that an item has been updated.
+         * @param item The item within the view that was updated.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 通知视图，某个项目的属性已更新。
+         * @param item 视图中需要被更新的项。
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        ArrayCollection.prototype.itemUpdated = function (item) {
+            var index = this.getItemIndex(item);
+            if (index != -1) {
+                this.dispatchCoEvent(eui.CollectionEventKind.UPDATE, index, -1, [item]);
             }
         };
-        return HScrollBar;
-    }(eui.ScrollBarBase));
-    eui.HScrollBar = HScrollBar;
-    __reflect(HScrollBar.prototype, "eui.HScrollBar");
+        /**
+         * Removes all items from the list.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 删除列表中的所有项目。
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        ArrayCollection.prototype.removeAll = function () {
+            var items = this._source.concat();
+            this._source = [];
+            this.dispatchCoEvent(eui.CollectionEventKind.REMOVE, 0, -1, items);
+        };
+        /**
+         * Removes the item at the specified index and returns it.
+         * Any items that were after this index are now one index earlier.
+         * @param index The index from which to remove the item.
+         * @return The item that was removed.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 删除指定索引处的项目并返回该项目。原先位于此索引之后的所有项目的索引现在都向前移动一个位置。
+         * @param index 要被移除的项的索引。
+         * @return 被移除的项。
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        ArrayCollection.prototype.removeItemAt = function (index) {
+            if (index < 0 || index >= this._source.length) {
+                true && egret.$error(1007);
+                return;
+            }
+            var item = this._source.splice(index, 1)[0];
+            this.dispatchCoEvent(eui.CollectionEventKind.REMOVE, index, -1, [item]);
+            return item;
+        };
+        /**
+         * Replaces the item at the specified index.
+         * @param item The new item to be placed at the specified index.
+         * @param index The index at which to place the item.
+         * @return The item that was replaced, or <code>null</code> if none.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 替换在指定索引处的项目，并返回该项目。
+         * @param item 要在指定索引放置的新的项。
+         * @param index 要被替换的项的索引位置。
+         * @return 被替换的项目，如果没有该项则返回<code>null</code> 。
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        ArrayCollection.prototype.replaceItemAt = function (item, index) {
+            if (index < 0 || index >= this._source.length) {
+                true && egret.$error(1007);
+                return;
+            }
+            var oldItem = this._source.splice(index, 1, item)[0];
+            this.dispatchCoEvent(eui.CollectionEventKind.REPLACE, index, -1, [item], [oldItem]);
+            return oldItem;
+        };
+        /**
+         * Replaces all items with a new source data, this method can not reset the scroller position of view.
+         * @param newSource new source data.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 用新数据源替换原始数据源，此方法与直接设置source不同，它不会导致目标视图重置滚动位置。
+         * @param newSource 新数据。
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        ArrayCollection.prototype.replaceAll = function (newSource) {
+            if (!newSource)
+                newSource = [];
+            var newLength = newSource.length;
+            var oldLength = this._source.length;
+            for (var i = newLength; i < oldLength; i++) {
+                this.removeItemAt(newLength);
+            }
+            for (var i = 0; i < newLength; i++) {
+                if (i >= oldLength)
+                    this.addItemAt(newSource[i], i);
+                else
+                    this.replaceItemAt(newSource[i], i);
+            }
+            this._source = newSource;
+        };
+        /**
+         * @private
+         * 抛出事件
+         */
+        ArrayCollection.prototype.dispatchCoEvent = function (kind, location, oldLocation, items, oldItems) {
+            eui.CollectionEvent.dispatchCollectionEvent(this, eui.CollectionEvent.COLLECTION_CHANGE, kind, location, oldLocation, items, oldItems);
+        };
+        return ArrayCollection;
+    }(egret.EventDispatcher));
+    eui.ArrayCollection = ArrayCollection;
+    __reflect(ArrayCollection.prototype, "eui.ArrayCollection", ["eui.ICollection", "egret.IEventDispatcher"]);
+    eui.registerProperty(ArrayCollection, "source", "Array", true);
 })(eui || (eui = {}));
 var eui;
 (function (eui) {
@@ -17106,8 +17757,8 @@ var eui;
          * @private
          *
          */
-        EditableText.prototype.$invalidateContentBounds = function () {
-            _super.prototype.$invalidateContentBounds.call(this);
+        EditableText.prototype.$invalidateTextField = function () {
+            _super.prototype.$invalidateTextField.call(this);
             this.invalidateSize();
         };
         /**
@@ -17182,7 +17833,7 @@ var eui;
          *
          */
         EditableText.prototype.$onRemoveFromStage = function () {
-            eui.sys.UIComponentImpl.prototype["$onRemoveFromStage"].call(this);
+            _super.prototype.$onRemoveFromStage.call(this);
             this.removeEventListener(egret.FocusEvent.FOCUS_IN, this.onfocusIn, this);
             this.removeEventListener(egret.FocusEvent.FOCUS_OUT, this.onfocusOut, this);
         };
@@ -17508,84 +18159,6 @@ var eui;
     __reflect(EditableText.prototype, "eui.EditableText", ["eui.UIComponent", "egret.DisplayObject", "eui.IDisplayText"]);
     eui.sys.implementUIComponent(EditableText, egret.TextField);
     eui.registerBindable(EditableText.prototype, "text");
-})(eui || (eui = {}));
-//////////////////////////////////////////////////////////////////////////////////////
-//
-//  Copyright (c) 2014-present, Egret Technology.
-//  All rights reserved.
-//  Redistribution and use in source and binary forms, with or without
-//  modification, are permitted provided that the following conditions are met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//     * Neither the name of the Egret nor the
-//       names of its contributors may be used to endorse or promote products
-//       derived from this software without specific prior written permission.
-//
-//  THIS SOFTWARE IS PROVIDED BY EGRET AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
-//  OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-//  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-//  IN NO EVENT SHALL EGRET AND CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-//  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-//  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;LOSS OF USE, DATA,
-//  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-//  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-//  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-//////////////////////////////////////////////////////////////////////////////////////
-var eui;
-(function (eui) {
-    /**
-     * The CheckBox component consists of an optional label and a small box
-     * that can contain a check mark or not.<p/>
-     *
-     * When a user clicks a CheckBox component or its associated text,
-     * the CheckBox component sets its <code>selected</code> property
-     * to <code>true</code> for checked, and to <code>false</code> for unchecked.
-     *
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @includeExample extension/eui/components/CheckboxExample.ts
-     * @language en_US
-     */
-    /**
-     * CheckBox 组件包含一个可选标签和一个小方框，该方框内可以包含/不包含复选标记。<p/>
-     * 用户单击 CheckBox 组件或其关联文本时，CheckBox 组件会将其 selected 属性设置为 true（表示选中）或 false（表示取消选中）。
-     *
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @includeExample extension/eui/components/CheckboxExample.ts
-     * @language zh_CN
-     */
-    var CheckBox = (function (_super) {
-        __extends(CheckBox, _super);
-        /**
-         * Constructor.
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 创建一个CheckBox
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        function CheckBox() {
-            return _super.call(this) || this;
-        }
-        return CheckBox;
-    }(eui.ToggleButton));
-    eui.CheckBox = CheckBox;
-    __reflect(CheckBox.prototype, "eui.CheckBox");
 })(eui || (eui = {}));
 //////////////////////////////////////////////////////////////////////////////////////
 //
@@ -17978,68 +18551,68 @@ var eui;
     var Direction = (function () {
         function Direction() {
         }
+        /**
+         * Specifies left-to-right direction.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 水平从左到右增长
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        Direction.LTR = "ltr";
+        /**
+         * Specifies right-to-left direction.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 水平从右到左增长
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        Direction.RTL = "rtl";
+        /**
+         * Specifies top-to-bottom direction.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 竖直从上到下增长
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        Direction.TTB = "ttb";
+        /**
+         * Specifies bottom-to-top direction.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 竖直从下到上增长
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        Direction.BTT = "btt";
         return Direction;
     }());
-    /**
-     * Specifies left-to-right direction.
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 水平从左到右增长
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    Direction.LTR = "ltr";
-    /**
-     * Specifies right-to-left direction.
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 水平从右到左增长
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    Direction.RTL = "rtl";
-    /**
-     * Specifies top-to-bottom direction.
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 竖直从上到下增长
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    Direction.TTB = "ttb";
-    /**
-     * Specifies bottom-to-top direction.
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 竖直从下到上增长
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    Direction.BTT = "btt";
     eui.Direction = Direction;
     __reflect(Direction.prototype, "eui.Direction");
 })(eui || (eui = {}));
@@ -18155,248 +18728,6 @@ var eui;
 //  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////////////
-/// <reference path="../utils/registerBindable.ts" />
-var eui;
-(function (eui) {
-    /**
-     * The ItemRenderer class is the base class for item renderers.
-     *
-     * @state up Up state
-     * @state down Down state
-     * @state upAndSelected Up state when the button is selected
-     * @state downAndSelected Down state when the button is selected
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @includeExample  extension/eui/components/ItemRendererExample.ts
-     * @language en_US
-     */
-    /**
-     * ItemRenderer 类是项呈示器的基类。
-     *
-     * @state up 弹起状态
-     * @state down 按下状态
-     * @state upAndSelected 选择时的弹起状态
-     * @state downAndSelected 选择时的按下状态
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @includeExample  extension/eui/components/ItemRendererExample.ts
-     * @language zh_CN
-     */
-    var ItemRenderer = (function (_super) {
-        __extends(ItemRenderer, _super);
-        /**
-         * Constructor.
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 构造函数。
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        function ItemRenderer() {
-            var _this = _super.call(this) || this;
-            /**
-             * @private
-             */
-            _this._data = null;
-            /**
-             * @private
-             */
-            _this._selected = false;
-            /**
-             * The index of the item in the data provider
-             * of the host component of the item renderer.
-             *
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * 项呈示器的数据提供程序中的项目索引。
-             *
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            _this.itemIndex = -1;
-            /**
-             * @private
-             * 指示第一次分派 TouchEvent.TOUCH_BEGIN 时，触摸点是否在按钮上。
-             */
-            _this.touchCaptured = false;
-            _this.addEventListener(egret.TouchEvent.TOUCH_BEGIN, _this.onTouchBegin, _this);
-            return _this;
-        }
-        Object.defineProperty(ItemRenderer.prototype, "data", {
-            /**
-             * The data to render or edit.
-             *
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * 要呈示或编辑的数据。
-             *
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            get: function () {
-                return this._data;
-            },
-            set: function (value) {
-                this._data = value;
-                eui.PropertyEvent.dispatchPropertyEvent(this, eui.PropertyEvent.PROPERTY_CHANGE, "data");
-                this.dataChanged();
-            },
-            enumerable: true,
-            configurable: true
-        });
-        /**
-         * Update the view when the <code>data</code> property changes.
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 当数据改变时，更新视图。
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        ItemRenderer.prototype.dataChanged = function () {
-        };
-        Object.defineProperty(ItemRenderer.prototype, "selected", {
-            /**
-             * Contains <code>true</code> if the item renderer
-             * can show itself as selected.
-             *
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * 如果项呈示器可以将其自身显示为已选中，则为 true。
-             *
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            get: function () {
-                return this._selected;
-            },
-            set: function (value) {
-                if (this._selected == value)
-                    return;
-                this._selected = value;
-                this.invalidateState();
-            },
-            enumerable: true,
-            configurable: true
-        });
-        /**
-         * Dispatched when an event of some kind occurred that canceled the touch.
-         * @version Egret 3.0.1
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 由于某个事件取消了触摸时触发
-         * @version Egret 3.0.1
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        ItemRenderer.prototype.onTouchCancle = function (event) {
-            this.touchCaptured = false;
-            var stage = event.$currentTarget;
-            stage.removeEventListener(egret.TouchEvent.TOUCH_CANCEL, this.onTouchCancle, this);
-            stage.removeEventListener(egret.TouchEvent.TOUCH_END, this.onStageTouchEnd, this);
-            this.invalidateState();
-        };
-        /**
-         * Handles <code>TouchEvent.TOUCH_BEGIN</code> events
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 触碰开始时触发事件
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        ItemRenderer.prototype.onTouchBegin = function (event) {
-            this.$stage.addEventListener(egret.TouchEvent.TOUCH_CANCEL, this.onTouchCancle, this);
-            this.$stage.addEventListener(egret.TouchEvent.TOUCH_END, this.onStageTouchEnd, this);
-            this.touchCaptured = true;
-            this.invalidateState();
-            event.updateAfterEvent();
-        };
-        /**
-         * @private
-         * 舞台上触摸弹起事件
-         */
-        ItemRenderer.prototype.onStageTouchEnd = function (event) {
-            var stage = event.$currentTarget;
-            stage.removeEventListener(egret.TouchEvent.TOUCH_CANCEL, this.onTouchCancle, this);
-            stage.removeEventListener(egret.TouchEvent.TOUCH_END, this.onStageTouchEnd, this);
-            this.touchCaptured = false;
-            this.invalidateState();
-        };
-        /**
-         * @inheritDoc
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        ItemRenderer.prototype.getCurrentState = function () {
-            var state = "up";
-            if (this.touchCaptured) {
-                state = "down";
-            }
-            if (this._selected) {
-                var selectedState = state + "AndSelected";
-                var skin = this.skin;
-                if (skin && skin.hasState(selectedState)) {
-                    return selectedState;
-                }
-                return state == "disabled" ? "disabled" : "down";
-            }
-            return state;
-        };
-        return ItemRenderer;
-    }(eui.Component));
-    eui.ItemRenderer = ItemRenderer;
-    __reflect(ItemRenderer.prototype, "eui.ItemRenderer", ["eui.IItemRenderer"]);
-    eui.registerBindable(ItemRenderer.prototype, "data");
-})(eui || (eui = {}));
 //////////////////////////////////////////////////////////////////////////////////////
 //
 //  Copyright (c) 2014-present, Egret Technology.
@@ -18478,53 +18809,53 @@ var eui;
     var ScrollPolicy = (function () {
         function ScrollPolicy() {
         }
+        /**
+         * Show the scrollbar if the children exceed the owner's dimension.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 如果子项超出父级的尺寸，则允许滚动，反之不允许滚动。
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        ScrollPolicy.AUTO = "auto";
+        /**
+         * Never show the scrollbar.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 从不允许滚动。
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        ScrollPolicy.OFF = "off";
+        /**
+         * Always show the scrollbar.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 总是允许滚动。
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        ScrollPolicy.ON = "on";
         return ScrollPolicy;
     }());
-    /**
-     * Show the scrollbar if the children exceed the owner's dimension.
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 如果子项超出父级的尺寸，则允许滚动，反之不允许滚动。
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    ScrollPolicy.AUTO = "auto";
-    /**
-     * Never show the scrollbar.
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 从不允许滚动。
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    ScrollPolicy.OFF = "off";
-    /**
-     * Always show the scrollbar.
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 总是允许滚动。
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    ScrollPolicy.ON = "on";
     eui.ScrollPolicy = ScrollPolicy;
     __reflect(ScrollPolicy.prototype, "eui.ScrollPolicy");
 })(eui || (eui = {}));
@@ -18631,11 +18962,8 @@ var eui;
          * @param url
          */
         Theme.prototype.load = function (url) {
-            var adapter = egret.getImplementation("eui.IThemeAdapter");
-            if (!adapter) {
-                adapter = new eui.DefaultThemeAdapter();
-            }
-            adapter.getTheme(url, this.onConfigLoaded, this.onConfigLoaded, this);
+            var _this = this;
+            eui.getTheme(url, function (data) { return _this.onConfigLoaded(data); });
         };
         /**
          * @private
@@ -18644,21 +18972,16 @@ var eui;
          */
         Theme.prototype.onConfigLoaded = function (str) {
             var data;
-            if (str) {
-                if (true) {
-                    try {
-                        data = JSON.parse(str);
-                    }
-                    catch (e) {
-                        egret.$error(3000);
-                    }
-                }
-                else {
+            if (typeof str == "string") {
+                try {
                     data = JSON.parse(str);
                 }
+                catch (e) {
+                    egret.$error(3000);
+                }
             }
-            else if (true) {
-                egret.$error(3000, this.$configURL);
+            else {
+                data = str;
             }
             if (data && data.skins) {
                 var skinMap = this.skinMap;
@@ -18675,6 +18998,11 @@ var eui;
             if (data.styles) {
                 this.$styles = data.styles;
             }
+            var paths = data.paths;
+            for (var path in paths) {
+                EXML.update(path, paths[path]);
+            }
+            //commonjs|commonjs2
             if (!data.exmls || data.exmls.length == 0) {
                 this.onLoaded();
             }
@@ -19001,23 +19329,23 @@ var eui;
             egret.Event.release(event);
             return result;
         };
+        /**
+         * Dispatched when a collection has changed.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 集合类数据发生改变
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        CollectionEvent.COLLECTION_CHANGE = "collectionChange";
         return CollectionEvent;
     }(egret.Event));
-    /**
-     * Dispatched when a collection has changed.
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 集合类数据发生改变
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    CollectionEvent.COLLECTION_CHANGE = "collectionChange";
     eui.CollectionEvent = CollectionEvent;
     __reflect(CollectionEvent.prototype, "eui.CollectionEvent");
 })(eui || (eui = {}));
@@ -19073,103 +19401,103 @@ var eui;
     var CollectionEventKind = (function () {
         function CollectionEventKind() {
         }
+        /**
+         * Indicates that the collection added an item or items.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 指示集合添加了一个或多个项目。
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        CollectionEventKind.ADD = "add";
+        /**
+         * Indicates that the collection applied a sort, a filter, or both.
+         * This change can potentially be easier to handle than a RESET.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 指示集合应用了排序或/和筛选。
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        CollectionEventKind.REFRESH = "refresh";
+        /**
+         * Indicates that the collection removed an item or items.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 指示集合删除了一个或多个项目。
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        CollectionEventKind.REMOVE = "remove";
+        /**
+         * Indicates that the item at the position identified by the
+         * CollectionEvent <code>location</code> property has been replaced.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 指示已替换由 CollectionEvent.location 属性确定的位置处的项目。
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        CollectionEventKind.REPLACE = "replace";
+        /**
+         * Indicates that the collection has changed so drastically that
+         * a reset is required.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 指示集合已彻底更改，需要进行重置。
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        CollectionEventKind.RESET = "reset";
+        /**
+         * Indicates that one or more items were updated within the collection.
+         * The affected item(s)
+         * are stored in the <code>CollectionEvent.items</code> property.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 指示集合中一个或多个项目进行了更新。受影响的项目将存储在  CollectionEvent.items 属性中。
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        CollectionEventKind.UPDATE = "update";
         return CollectionEventKind;
     }());
-    /**
-     * Indicates that the collection added an item or items.
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 指示集合添加了一个或多个项目。
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    CollectionEventKind.ADD = "add";
-    /**
-     * Indicates that the collection applied a sort, a filter, or both.
-     * This change can potentially be easier to handle than a RESET.
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 指示集合应用了排序或/和筛选。
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    CollectionEventKind.REFRESH = "refresh";
-    /**
-     * Indicates that the collection removed an item or items.
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 指示集合删除了一个或多个项目。
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    CollectionEventKind.REMOVE = "remove";
-    /**
-     * Indicates that the item at the position identified by the
-     * CollectionEvent <code>location</code> property has been replaced.
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 指示已替换由 CollectionEvent.location 属性确定的位置处的项目。
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    CollectionEventKind.REPLACE = "replace";
-    /**
-     * Indicates that the collection has changed so drastically that
-     * a reset is required.
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 指示集合已彻底更改，需要进行重置。
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    CollectionEventKind.RESET = "reset";
-    /**
-     * Indicates that one or more items were updated within the collection.
-     * The affected item(s)
-     * are stored in the <code>CollectionEvent.items</code> property.
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 指示集合中一个或多个项目进行了更新。受影响的项目将存储在  CollectionEvent.items 属性中。
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    CollectionEventKind.UPDATE = "update";
     eui.CollectionEventKind = CollectionEventKind;
     __reflect(CollectionEventKind.prototype, "eui.CollectionEventKind");
 })(eui || (eui = {}));
@@ -19318,23 +19646,23 @@ var eui;
             egret.Event.release(event);
             return result;
         };
+        /**
+         * The type of the event object for an <code>itemTap</code> event.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * <code>itemTap</code> 事件的对象类型。
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        ItemTapEvent.ITEM_TAP = "itemTap";
         return ItemTapEvent;
     }(egret.Event));
-    /**
-     * The type of the event object for an <code>itemTap</code> event.
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * <code>itemTap</code> 事件的对象类型。
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    ItemTapEvent.ITEM_TAP = "itemTap";
     eui.ItemTapEvent = ItemTapEvent;
     __reflect(ItemTapEvent.prototype, "eui.ItemTapEvent");
 })(eui || (eui = {}));
@@ -19458,23 +19786,23 @@ var eui;
             egret.Event.release(event);
             return result;
         };
+        /**
+         * Dispatch when a property changed.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 属性改变。
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        PropertyEvent.PROPERTY_CHANGE = "propertyChange";
         return PropertyEvent;
     }(egret.Event));
-    /**
-     * Dispatch when a property changed.
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 属性改变。
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    PropertyEvent.PROPERTY_CHANGE = "propertyChange";
     eui.PropertyEvent = PropertyEvent;
     __reflect(PropertyEvent.prototype, "eui.PropertyEvent");
 })(eui || (eui = {}));
@@ -19497,9 +19825,9 @@ var eui;
             _this.toPos = toPos;
             return _this;
         }
+        ScrollerThrowEvent.THROW = "throw";
         return ScrollerThrowEvent;
     }(egret.Event));
-    ScrollerThrowEvent.THROW = "throw";
     eui.ScrollerThrowEvent = ScrollerThrowEvent;
     __reflect(ScrollerThrowEvent.prototype, "eui.ScrollerThrowEvent");
 })(eui || (eui = {}));
@@ -19617,83 +19945,83 @@ var eui;
             egret.Event.release(event);
             return result;
         };
+        /**
+         * creation complete of component.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 组件创建完成
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        UIEvent.CREATION_COMPLETE = "creationComplete";
+        /**
+         * the ending of change.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 改变结束
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        UIEvent.CHANGE_END = "changeEnd";
+        /**
+         * The beginning of change.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 改变开始
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        UIEvent.CHANGE_START = "changeStart";
+        /**
+         * Before close the panel.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 即将关闭面板事件
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        UIEvent.CLOSING = "closing";
+        /**
+         * The coordinates of the UI components changed in it's parent.
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * UI组件在父级容器中的坐标发生改变事件
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        UIEvent.MOVE = "move";
         return UIEvent;
     }(egret.Event));
-    /**
-     * creation complete of component.
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 组件创建完成
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    UIEvent.CREATION_COMPLETE = "creationComplete";
-    /**
-     * the ending of change.
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 改变结束
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    UIEvent.CHANGE_END = "changeEnd";
-    /**
-     * The beginning of change.
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 改变开始
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    UIEvent.CHANGE_START = "changeStart";
-    /**
-     * Before close the panel.
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 即将关闭面板事件
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    UIEvent.CLOSING = "closing";
-    /**
-     * The coordinates of the UI components changed in it's parent.
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * UI组件在父级容器中的坐标发生改变事件
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    UIEvent.MOVE = "move";
     eui.UIEvent = UIEvent;
     __reflect(UIEvent.prototype, "eui.UIEvent");
 })(eui || (eui = {}));
@@ -20421,13 +20749,16 @@ var eui;
              * @private
              */
             _this._widthConstraint = NaN;
+            /**
+             * @private
+             */
+            _this._heightConstraint = NaN;
             _this.initializeUIValues();
             _this.text = text;
             return _this;
         }
         /**
          * @private
-         *
          */
         BitmapLabel.prototype.$invalidateContentBounds = function () {
             _super.prototype.$invalidateContentBounds.call(this);
@@ -20464,18 +20795,17 @@ var eui;
             return result;
         };
         BitmapLabel.prototype.$setFont = function (value) {
-            var values = this.$BitmapText;
-            if (this.$font == value) {
+            if (this.$fontForBitmapLabel == value) {
                 return false;
             }
-            this.$font = value;
+            this.$fontForBitmapLabel = value;
             if (this.$createChildrenCalled) {
                 this.$parseFont();
             }
             else {
                 this.$fontChanged = true;
             }
-            this.$BitmapText[6 /* fontStringChanged */] = true;
+            this.$fontStringChanged = true;
             return true;
         };
         /**
@@ -20483,31 +20813,24 @@ var eui;
          */
         BitmapLabel.prototype.$parseFont = function () {
             this.$fontChanged = false;
-            if (this.$font && typeof this.$font == "string") {
-                var adapter = egret.getImplementation("eui.IAssetAdapter");
-                if (!adapter) {
-                    adapter = new eui.DefaultAssetAdapter();
-                }
-                adapter.getAsset(this.$font, this.$onFontChanged, this);
+            var font = this.$fontForBitmapLabel;
+            if (typeof font == "string") {
+                eui.getAssets(font, function (bitmapFont) {
+                    this.$setFontData(bitmapFont, font);
+                }, this);
             }
             else {
-                this.$setFontData(this.$font);
+                this.$setFontData(font);
             }
         };
-        /**
-         * 皮肤发生改变
-         */
-        BitmapLabel.prototype.$onFontChanged = function (bitmapFont, font) {
-            if (font !== this.$font) {
+        BitmapLabel.prototype.$setFontData = function (value, font) {
+            if (font && font != this.$fontForBitmapLabel) {
                 return;
             }
-            this.$setFontData(bitmapFont);
-        };
-        BitmapLabel.prototype.$setFontData = function (value) {
-            if (value == this.$BitmapText[5 /* font */]) {
+            if (value == this.$font) {
                 return false;
             }
-            this.$BitmapText[5 /* font */] = value;
+            this.$font = value;
             this.$invalidateContentBounds();
             return true;
         };
@@ -20551,8 +20874,8 @@ var eui;
          */
         BitmapLabel.prototype.measure = function () {
             var values = this.$UIComponent;
-            var textValues = this.$BitmapText;
-            var oldWidth = textValues[0 /* textFieldWidth */];
+            var oldWidth = this.$textFieldWidth;
+            var oldHeight = this.$textFieldHeight;
             var availableWidth = NaN;
             if (!isNaN(this._widthConstraint)) {
                 availableWidth = this._widthConstraint;
@@ -20565,8 +20888,21 @@ var eui;
                 availableWidth = values[13 /* maxWidth */];
             }
             _super.prototype.$setWidth.call(this, availableWidth);
+            var availableHeight = NaN;
+            if (!isNaN(this._heightConstraint)) {
+                availableHeight = this._heightConstraint;
+                this._heightConstraint = NaN;
+            }
+            else if (!isNaN(values[9 /* explicitHeight */])) {
+                availableHeight = values[9 /* explicitHeight */];
+            }
+            else if (values[15 /* maxHeight */] != 100000) {
+                availableHeight = values[15 /* maxHeight */];
+            }
+            _super.prototype.$setHeight.call(this, availableHeight);
             this.setMeasuredSize(this.textWidth, this.textHeight);
             _super.prototype.$setWidth.call(this, oldWidth);
+            _super.prototype.$setHeight.call(this, oldHeight);
         };
         /**
          * @copy eui.UIComponent#updateDisplayList
@@ -20680,6 +21016,7 @@ var eui;
                 return;
             }
             this._widthConstraint = layoutWidth;
+            this._heightConstraint = layoutHeight;
             this.invalidateSize();
         };
         /**
@@ -20850,17 +21187,16 @@ var EXML;
         }
         var exmlContents = [];
         urls.forEach(function (url) {
-            if (useCache && (url in parsedClasses)) {
-                exmlContents[url] = "";
-                exmlContents.push(url);
-                return;
-            }
             var loaded = function (url, text) {
                 exmlContents[url] = text;
                 exmlContents.push(url);
                 if (exmlContents.length == urls.length)
                     onLoadAllFinished(urls, exmlContents, callBack, thisObject);
             };
+            if (useCache && (url in parsedClasses)) {
+                loaded(url, "");
+                return;
+            }
             request(url, loaded);
         });
     }
@@ -20881,6 +21217,18 @@ var EXML;
         });
         callBack && callBack.call(thisObject, clazzes, urls);
     }
+    function update(url, clazz) {
+        parsedClasses[url] = clazz;
+        var list = callBackMap[url];
+        delete callBackMap[url];
+        var length = list ? list.length : 0;
+        for (var i = 0; i < length; i++) {
+            var arr = list[i];
+            if (arr[0] && arr[1])
+                arr[0].call(arr[1], clazz, url);
+        }
+    }
+    EXML.update = update;
     /**
      * @private
      * @param url
@@ -20890,19 +21238,8 @@ var EXML;
         var clazz = null;
         if (text) {
             clazz = parser.$parseCode(text, className);
+            update(url, clazz);
         }
-        if (url) {
-            parsedClasses[url] = clazz;
-            var list = callBackMap[url];
-            delete callBackMap[url];
-            var length_30 = list ? list.length : 0;
-            for (var i = 0; i < length_30; i++) {
-                var arr = list[i];
-                if (arr[0] && arr[1])
-                    arr[0].call(arr[1], clazz, url);
-            }
-        }
-        return clazz;
     }
     EXML.$parseURLContentAsJs = $parseURLContentAsJs;
     /**
@@ -20910,15 +21247,25 @@ var EXML;
      */
     function $parseURLContent(url, text) {
         var clazz = null;
-        if (text) {
-            clazz = parse(text);
+        if (text && typeof (text) == "string") {
+            try {
+                clazz = parse(text);
+            }
+            catch (e) {
+                console.error(url + "\n" + e.message);
+            }
+        }
+        if (text && text["prototype"]) {
+            clazz = text;
         }
         if (url) {
-            parsedClasses[url] = clazz;
+            if (clazz) {
+                parsedClasses[url] = clazz;
+            }
             var list = callBackMap[url];
             delete callBackMap[url];
-            var length_31 = list ? list.length : 0;
-            for (var i = 0; i < length_31; i++) {
+            var length_30 = list ? list.length : 0;
+            for (var i = 0; i < length_30; i++) {
                 var arr = list[i];
                 if (arr[0] && arr[1])
                     arr[0].call(arr[1], clazz, url);
@@ -20941,11 +21288,7 @@ var EXML;
             }
             callback(url, str);
         };
-        var adapter = egret.getImplementation("eui.IThemeAdapter");
-        if (!adapter) {
-            adapter = new eui.DefaultThemeAdapter();
-        }
-        adapter.getTheme(openUrl, onConfigLoaded, onConfigLoaded, this);
+        eui.getTheme(openUrl, onConfigLoaded);
     }
 })(EXML || (EXML = {}));
 //////////////////////////////////////////////////////////////////////////////////////
@@ -21649,59 +21992,59 @@ var eui;
     var ColumnAlign = (function () {
         function ColumnAlign() {
         }
+        /**
+         * Do not justify the rows.
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 不将行两端对齐。
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        ColumnAlign.LEFT = "left";
+        /**
+         * Justify the rows by increasing the vertical gap.
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 通过增大水平间隙将行两端对齐。
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        ColumnAlign.JUSTIFY_USING_GAP = "justifyUsingGap";
+        /**
+         * Justify the rows by increasing the row height.
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 通过增大行高度将行两端对齐。
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        ColumnAlign.JUSTIFY_USING_WIDTH = "justifyUsingWidth";
         return ColumnAlign;
     }());
-    /**
-     * Do not justify the rows.
-     *
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 不将行两端对齐。
-     *
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    ColumnAlign.LEFT = "left";
-    /**
-     * Justify the rows by increasing the vertical gap.
-     *
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 通过增大水平间隙将行两端对齐。
-     *
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    ColumnAlign.JUSTIFY_USING_GAP = "justifyUsingGap";
-    /**
-     * Justify the rows by increasing the row height.
-     *
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 通过增大行高度将行两端对齐。
-     *
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    ColumnAlign.JUSTIFY_USING_WIDTH = "justifyUsingWidth";
     eui.ColumnAlign = ColumnAlign;
     __reflect(ColumnAlign.prototype, "eui.ColumnAlign");
 })(eui || (eui = {}));
@@ -21914,8 +22257,8 @@ var eui;
                 if (totalPercentWidth > 0) {
                     this.flexChildrenProportionally(targetWidth, widthToDistribute, totalPercentWidth, childInfoArray);
                     var roundOff_1 = 0;
-                    var length_32 = childInfoArray.length;
-                    for (i = 0; i < length_32; i++) {
+                    var length_31 = childInfoArray.length;
+                    for (i = 0; i < length_31; i++) {
                         childInfo = childInfoArray[i];
                         var childSize = Math.round(childInfo.size + roundOff_1);
                         roundOff_1 += childInfo.size - childSize;
@@ -22282,49 +22625,49 @@ var eui;
     var JustifyAlign = (function () {
         function JustifyAlign() {
         }
+        /**
+         * Justify the children with respect to the container.
+         * This uniformly sizes all children to be the same size as the
+         * container.
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 相对于容器对齐子代。这会将所有子代的大小统一调整为与容器相同的尺寸。
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        JustifyAlign.JUSTIFY = "justify";
+        /**
+         * Content justify the children width/height respect to the container.
+         * This uniformly sizes all children to be the content width/height of the container.
+         * The content width/height of the container is the size of the largest child.
+         * If all children are smaller than the width/height of the container, then
+         * all the children will be sized to the width/height of the container.
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 相对于容器对子代进行内容对齐。这会将所有子代的大小统一调整为容器的内容宽度/高度。
+         * 容器的内容宽度/高度是最大子代的大小。如果所有子代都小于容器的宽度/高度，则会将所有子代的大小调整为容器的宽度/高度。
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        JustifyAlign.CONTENT_JUSTIFY = "contentJustify";
         return JustifyAlign;
     }());
-    /**
-     * Justify the children with respect to the container.
-     * This uniformly sizes all children to be the same size as the
-     * container.
-     *
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 相对于容器对齐子代。这会将所有子代的大小统一调整为与容器相同的尺寸。
-     *
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    JustifyAlign.JUSTIFY = "justify";
-    /**
-     * Content justify the children width/height respect to the container.
-     * This uniformly sizes all children to be the content width/height of the container.
-     * The content width/height of the container is the size of the largest child.
-     * If all children are smaller than the width/height of the container, then
-     * all the children will be sized to the width/height of the container.
-     *
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 相对于容器对子代进行内容对齐。这会将所有子代的大小统一调整为容器的内容宽度/高度。
-     * 容器的内容宽度/高度是最大子代的大小。如果所有子代都小于容器的宽度/高度，则会将所有子代的大小调整为容器的宽度/高度。
-     *
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    JustifyAlign.CONTENT_JUSTIFY = "contentJustify";
     eui.JustifyAlign = JustifyAlign;
     __reflect(JustifyAlign.prototype, "eui.JustifyAlign");
 })(eui || (eui = {}));
@@ -22380,59 +22723,59 @@ var eui;
     var RowAlign = (function () {
         function RowAlign() {
         }
+        /**
+         * Do not justify the rows.
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 不进行两端对齐。
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        RowAlign.TOP = "top";
+        /**
+         * Justify the rows by increasing the vertical gap.
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 通过增大垂直间隙将行两端对齐。
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        RowAlign.JUSTIFY_USING_GAP = "justifyUsingGap";
+        /**
+         * Justify the rows by increasing the row height.
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 通过增大行高度将行两端对齐。
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        RowAlign.JUSTIFY_USING_HEIGHT = "justifyUsingHeight";
         return RowAlign;
     }());
-    /**
-     * Do not justify the rows.
-     *
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 不进行两端对齐。
-     *
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    RowAlign.TOP = "top";
-    /**
-     * Justify the rows by increasing the vertical gap.
-     *
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 通过增大垂直间隙将行两端对齐。
-     *
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    RowAlign.JUSTIFY_USING_GAP = "justifyUsingGap";
-    /**
-     * Justify the rows by increasing the row height.
-     *
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 通过增大行高度将行两端对齐。
-     *
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    RowAlign.JUSTIFY_USING_HEIGHT = "justifyUsingHeight";
     eui.RowAlign = RowAlign;
     __reflect(RowAlign.prototype, "eui.RowAlign");
 })(eui || (eui = {}));
@@ -23572,8 +23915,26 @@ var eui;
                         columnIndex = columnCount - 1;
                     rowIndex = Math.ceil((index + 1) / columnCount) - 1;
                 }
-                x = columnIndex * (columnWidth + horizontalGap) + paddingL;
-                y = rowIndex * (rowHeight + verticalGap) + paddingT;
+                switch (this._horizontalAlign) {
+                    case egret.HorizontalAlign.RIGHT:
+                        x = width - (columnIndex + 1) * (columnWidth + horizontalGap) + horizontalGap - paddingR;
+                        break;
+                    case egret.HorizontalAlign.LEFT:
+                        x = columnIndex * (columnWidth + horizontalGap) + paddingL;
+                        break;
+                    default:
+                        x = columnIndex * (columnWidth + horizontalGap) + paddingL;
+                }
+                switch (this._verticalAlign) {
+                    case egret.VerticalAlign.TOP:
+                        y = rowIndex * (rowHeight + verticalGap) + paddingT;
+                        break;
+                    case egret.VerticalAlign.BOTTOM:
+                        y = height - (rowIndex + 1) * (rowHeight + verticalGap) + verticalGap - paddingB;
+                        break;
+                    default:
+                        y = rowIndex * (rowHeight + verticalGap) + paddingT;
+                }
                 this.sizeAndPositionElement(elt, x, y, columnWidth, rowHeight);
                 index++;
             }
@@ -23722,42 +24083,42 @@ var eui;
     var TileOrientation = (function () {
         function TileOrientation() {
         }
+        /**
+         * Arranges elements row by row.
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 逐行排列元素。
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        TileOrientation.ROWS = "rows";
+        /**
+         * Arranges elements column by column.
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language en_US
+         */
+        /**
+         * 逐列排列元素。
+         *
+         * @version Egret 2.4
+         * @version eui 1.0
+         * @platform Web,Native
+         * @language zh_CN
+         */
+        TileOrientation.COLUMNS = "columns";
         return TileOrientation;
     }());
-    /**
-     * Arranges elements row by row.
-     *
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 逐行排列元素。
-     *
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    TileOrientation.ROWS = "rows";
-    /**
-     * Arranges elements column by column.
-     *
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 逐列排列元素。
-     *
-     * @version Egret 2.4
-     * @version eui 1.0
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    TileOrientation.COLUMNS = "columns";
     eui.TileOrientation = TileOrientation;
     __reflect(TileOrientation.prototype, "eui.TileOrientation");
 })(eui || (eui = {}));
@@ -23970,8 +24331,8 @@ var eui;
                 if (totalPercentHeight > 0) {
                     this.flexChildrenProportionally(targetHeight, heightToDistribute, totalPercentHeight, childInfoArray);
                     var roundOff_2 = 0;
-                    var length_33 = childInfoArray.length;
-                    for (i = 0; i < length_33; i++) {
+                    var length_32 = childInfoArray.length;
+                    for (i = 0; i < length_32; i++) {
                         childInfo = childInfoArray[i];
                         var childSize = Math.round(childInfo.size + roundOff_2);
                         roundOff_2 += childInfo.size - childSize;
@@ -24341,187 +24702,76 @@ var eui;
 //  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////////////
-/// <reference path="../utils/registerProperty.ts" />
-/// <reference path="../utils/registerBindable.ts" />
 var eui;
 (function (eui) {
     /**
-     * The ArrayCollection class is a wrapper class that exposes an <code>any[]</code> as a collection that can be
-     * accessed and manipulated using the methods and properties of the <code>ICollection</code> interfaces.
-     * ArrayCollection can notify the view to update item when data source changed.
+     * The HScrollBar (horizontal scrollbar) control lets you control
+     * the portion of data that is displayed when there is too much data
+     * to fit horizontally in a display area.
      *
-     * @event eui.CollectionEvent.COLLECTION_CHANGE Dispatched when the ArrayCollection has been updated in some way.
+     * <p>Although you can use the HScrollBar control as a stand-alone control,
+     * you usually combine it as part of another group of components to
+     * provide scrolling functionality.</p>
      *
-     * @defaultProperty source
+     * @includeExample  extension/eui/components/HScrollBarExample.ts
      * @version Egret 2.4
      * @version eui 1.0
      * @platform Web,Native
-     * @includeExample extension/eui/collections/ArrayCollectionExample.ts
      * @language en_US
      */
     /**
-     * ArrayCollection 类是数组的集合类数据结构包装器，可使用<code>ICollection</code>接口的方法和属性对其进行访问和处理。
-     * 使用这种数据结构包装普通数组，能在数据源发生改变的时候主动通知视图刷新变更数据项。
+     * HScrollBar（水平 ScrollBar）控件可以在因数据太多而不能在显示区域中以水平方向完全显示时控制显示的数据部分。
+     * <p>虽然 HScrollBar 控件可以单独使用，但通常将它与其他组件一起使用来提供滚动功能。</p>
      *
-     * @event eui.CollectionEvent.COLLECTION_CHANGE 当 ArrayCollection 更新的的时候会派发此事件。
-     *
-     * @defaultProperty source
+     * @includeExample  extension/eui/components/HScrollBarExample.ts
      * @version Egret 2.4
      * @version eui 1.0
      * @platform Web,Native
-     * @includeExample extension/eui/collections/ArrayCollectionExample.ts
      * @language zh_CN
      */
-    var ArrayCollection = (function (_super) {
-        __extends(ArrayCollection, _super);
+    var HScrollBar = (function (_super) {
+        __extends(HScrollBar, _super);
+        function HScrollBar() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
         /**
-         * Constructor. <p/>
-         * Creates a new ArrayCollection using the specified source array.
-         * If no array is specified an empty array will be used.
+         * @inheritDoc
+         *
          * @version Egret 2.4
          * @version eui 1.0
          * @platform Web,Native
-         * @language en_US
          */
-        /**
-         * 构造函数。<p/>
-         * 用指定的原始数组创建一个 ArrayCollection 实例。
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        function ArrayCollection(source) {
-            var _this = _super.call(this) || this;
-            if (source) {
-                _this._source = source;
+        HScrollBar.prototype.updateDisplayList = function (unscaledWidth, unscaledHeight) {
+            _super.prototype.updateDisplayList.call(this, unscaledWidth, unscaledHeight);
+            var thumb = this.thumb;
+            var viewport = this.$viewport;
+            if (!thumb || !viewport) {
+                return;
+            }
+            var bounds = egret.$TempRectangle;
+            thumb.getPreferredBounds(bounds);
+            var thumbWidth = bounds.width;
+            var thumbY = bounds.y;
+            var hsp = viewport.scrollH;
+            var contentWidth = viewport.contentWidth;
+            var width = viewport.width;
+            if (hsp <= 0) {
+                var scaleWidth = thumbWidth * (1 - (-hsp) / (width * 0.5));
+                scaleWidth = Math.max(5, Math.round(scaleWidth));
+                thumb.setLayoutBoundsSize(scaleWidth, NaN);
+                thumb.setLayoutBoundsPosition(0, thumbY);
+            }
+            else if (hsp >= contentWidth - width) {
+                var scaleWidth = thumbWidth * (1 - (hsp - contentWidth + width) / (width * 0.5));
+                scaleWidth = Math.max(5, Math.round(scaleWidth));
+                thumb.setLayoutBoundsSize(scaleWidth, NaN);
+                thumb.setLayoutBoundsPosition(unscaledWidth - scaleWidth, thumbY);
             }
             else {
-                _this._source = [];
+                var thumbX = (unscaledWidth - thumbWidth) * hsp / (contentWidth - width);
+                thumb.setLayoutBoundsSize(NaN, NaN);
+                thumb.setLayoutBoundsPosition(thumbX, thumbY);
             }
-            return _this;
-        }
-        Object.defineProperty(ArrayCollection.prototype, "source", {
-            /**
-             * The source of data in the ArrayCollection.
-             * The ArrayCollection object does not represent any changes that you make
-             * directly to the source array. Always use the ICollection methods to view the collection.
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * 数据源
-             * 通常情况下请不要直接调用Array的方法操作数据源，否则对应的视图无法收到数据改变的通知。通常都是通过ICollection的接口方法来查看数据。
-             * 若对数据源进行了修改，请手动调用refresh()方法刷新数据。
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            get: function () {
-                return this._source;
-            },
-            set: function (value) {
-                if (!value)
-                    value = [];
-                this._source = value;
-                this.dispatchCoEvent(eui.CollectionEventKind.RESET);
-            },
-            enumerable: true,
-            configurable: true
-        });
-        /**
-         * Applies the sort and filter to the view.
-         * The ArrayCollection does not detect source data changes automatically,
-         * so you must call the <code>refresh()</code>
-         * method to update the view after changing the source data.
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 在对数据源进行排序或过滤操作后可以手动调用此方法刷新所有数据,以更新视图。
-         * ArrayCollection 不会自动检原始数据进行了改变,所以你必须调用<code>refresh()</code>方法去更新显示。
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        ArrayCollection.prototype.refresh = function () {
-            this.dispatchCoEvent(eui.CollectionEventKind.REFRESH);
-        };
-        Object.defineProperty(ArrayCollection.prototype, "length", {
-            //--------------------------------------------------------------------------
-            //
-            // ICollection接口实现方法
-            //
-            //--------------------------------------------------------------------------
-            /**
-             * @inheritDoc
-             *
-             * @version Egret 2.4
-             * @version eui 1.0
-             * @platform Web,Native
-             */
-            get: function () {
-                return this._source.length;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        /**
-         * Adds the specified item to the end of the list.
-         * Equivalent to <code>addItemAt(item, length)</code>.
-         * @param item The item to add.
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 向列表末尾添加指定项目。等效于 <code>addItemAt(item, length)</code>。
-         * @param item 要被添加的项。
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        ArrayCollection.prototype.addItem = function (item) {
-            this._source.push(item);
-            this.dispatchCoEvent(eui.CollectionEventKind.ADD, this._source.length - 1, -1, [item]);
-        };
-        /**
-         * Adds the item at the specified index.
-         * The index of any item greater than the index of the added item is increased by one.
-         * If the the specified index is less than zero or greater than the length
-         * of the list, a Error which code is 1007 is thrown.
-         * @param item The item to place at the index.
-         * @param index The index at which to place the item.
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 在指定的索引处添加项目。
-         * 任何大于已添加项目的索引的项目索引都会增加 1。
-         * 如果指定的索引比0小或者比最大长度要大。则会抛出1007异常。
-         * @param item 要添加的项
-         * @param index 要添加的指定索引位置
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        ArrayCollection.prototype.addItemAt = function (item, index) {
-            if (index < 0 || index > this._source.length) {
-                true && egret.$error(1007);
-            }
-            this._source.splice(index, 0, item);
-            this.dispatchCoEvent(eui.CollectionEventKind.ADD, index, -1, [item]);
         };
         /**
          * @inheritDoc
@@ -24530,167 +24780,18 @@ var eui;
          * @version eui 1.0
          * @platform Web,Native
          */
-        ArrayCollection.prototype.getItemAt = function (index) {
-            return this._source[index];
-        };
-        /**
-         * @inheritDoc
-         *
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         */
-        ArrayCollection.prototype.getItemIndex = function (item) {
-            var length = this._source.length;
-            for (var i = 0; i < length; i++) {
-                if (this._source[i] === item) {
-                    return i;
-                }
-            }
-            return -1;
-        };
-        /**
-         * Notifies the view that an item has been updated.
-         * @param item The item within the view that was updated.
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 通知视图，某个项目的属性已更新。
-         * @param item 视图中需要被更新的项。
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        ArrayCollection.prototype.itemUpdated = function (item) {
-            var index = this.getItemIndex(item);
-            if (index != -1) {
-                this.dispatchCoEvent(eui.CollectionEventKind.UPDATE, index, -1, [item]);
+        HScrollBar.prototype.onPropertyChanged = function (event) {
+            switch (event.property) {
+                case "scrollH":
+                case "contentWidth":
+                    this.invalidateDisplayList();
+                    break;
             }
         };
-        /**
-         * Removes all items from the list.
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 删除列表中的所有项目。
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        ArrayCollection.prototype.removeAll = function () {
-            var items = this._source.concat();
-            this._source = [];
-            this.dispatchCoEvent(eui.CollectionEventKind.REMOVE, 0, -1, items);
-        };
-        /**
-         * Removes the item at the specified index and returns it.
-         * Any items that were after this index are now one index earlier.
-         * @param index The index from which to remove the item.
-         * @return The item that was removed.
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 删除指定索引处的项目并返回该项目。原先位于此索引之后的所有项目的索引现在都向前移动一个位置。
-         * @param index 要被移除的项的索引。
-         * @return 被移除的项。
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        ArrayCollection.prototype.removeItemAt = function (index) {
-            if (index < 0 || index >= this._source.length) {
-                true && egret.$error(1007);
-                return;
-            }
-            var item = this._source.splice(index, 1)[0];
-            this.dispatchCoEvent(eui.CollectionEventKind.REMOVE, index, -1, [item]);
-            return item;
-        };
-        /**
-         * Replaces the item at the specified index.
-         * @param item The new item to be placed at the specified index.
-         * @param index The index at which to place the item.
-         * @return The item that was replaced, or <code>null</code> if none.
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 替换在指定索引处的项目，并返回该项目。
-         * @param item 要在指定索引放置的新的项。
-         * @param index 要被替换的项的索引位置。
-         * @return 被替换的项目，如果没有该项则返回<code>null</code> 。
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        ArrayCollection.prototype.replaceItemAt = function (item, index) {
-            if (index < 0 || index >= this._source.length) {
-                true && egret.$error(1007);
-                return;
-            }
-            var oldItem = this._source.splice(index, 1, item)[0];
-            this.dispatchCoEvent(eui.CollectionEventKind.REPLACE, index, -1, [item], [oldItem]);
-            return oldItem;
-        };
-        /**
-         * Replaces all items with a new source data, this method can not reset the scroller position of view.
-         * @param newSource new source data.
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 用新数据源替换原始数据源，此方法与直接设置source不同，它不会导致目标视图重置滚动位置。
-         * @param newSource 新数据。
-         * @version Egret 2.4
-         * @version eui 1.0
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        ArrayCollection.prototype.replaceAll = function (newSource) {
-            if (!newSource)
-                newSource = [];
-            var newLength = newSource.length;
-            var oldLength = this._source.length;
-            for (var i = newLength; i < oldLength; i++) {
-                this.removeItemAt(newLength);
-            }
-            for (var i = 0; i < newLength; i++) {
-                if (i >= oldLength)
-                    this.addItemAt(newSource[i], i);
-                else
-                    this.replaceItemAt(newSource[i], i);
-            }
-            this._source = newSource;
-        };
-        /**
-         * @private
-         * 抛出事件
-         */
-        ArrayCollection.prototype.dispatchCoEvent = function (kind, location, oldLocation, items, oldItems) {
-            eui.CollectionEvent.dispatchCollectionEvent(this, eui.CollectionEvent.COLLECTION_CHANGE, kind, location, oldLocation, items, oldItems);
-        };
-        return ArrayCollection;
-    }(egret.EventDispatcher));
-    eui.ArrayCollection = ArrayCollection;
-    __reflect(ArrayCollection.prototype, "eui.ArrayCollection", ["eui.ICollection", "egret.IEventDispatcher"]);
-    eui.registerProperty(ArrayCollection, "source", "Array", true);
+        return HScrollBar;
+    }(eui.ScrollBarBase));
+    eui.HScrollBar = HScrollBar;
+    __reflect(HScrollBar.prototype, "eui.HScrollBar");
 })(eui || (eui = {}));
 //////////////////////////////////////////////////////////////////////////////////////
 //

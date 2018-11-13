@@ -3,7 +3,7 @@
     <e:Rect includeIn="down" left="0" right="0" top="0" bottom="0" fillColor="0xA38468" ellipseWidth="8" ellipseHeight="8"/>
     <e:Rect includeIn="disabled" left="0" right="0" top="0" bottom="0" fillColor="0xcccccc" ellipseWidth="8" ellipseHeight="8"/>
     <e:Rect includeIn="up" left="0" right="0" top="0" bottom="0" fillColor="0x8f7a66" ellipseWidth="8" ellipseHeight="8"/>
-    <e:Label id="labelDisplay" top="12" bottom="12" left="12" right="12"
-             size="24"
+    <e:Label id="labelDisplay" top="18" bottom="18" left="18" right="18"
+             size="64"
              textColor="0xffffff" verticalAlign="middle" textAlign="center" text="Button"/>
 </e:Skin>
