@@ -58,3 +58,7 @@ declare module uis{
 	class GameUI extends eui.Group{
 	}
 }
+declare module uis{
+	class LoadingUI extends eui.Group{
+	}
+}

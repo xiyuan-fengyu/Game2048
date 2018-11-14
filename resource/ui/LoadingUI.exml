@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<e:Group class="uis.LoadingUI" width="1080" height="1920" xmlns:e="http://ns.egret.com/eui" xmlns:w="http://ns.egret.com/wing">
+	<e:Group id="data"/>
+	<e:Group height="30" verticalCenter="0" left="120" right="120">
+		<e:Rect id="back" left="0" right="0" top="0" bottom="0" fillAlpha="0.3" ellipseHeight="30" ellipseWidth="30" fillColor="0x32ffb0"/>
+		<e:Rect id="front" left="0" top="0" bottom="0" ellipseHeight="30" ellipseWidth="30" width="{data.width}" fillColor="0x32ffb0"/>
+		<e:Label text="{data.label}" horizontalCenter="0" anchorOffsetY="0" size="36" bottom="36" italic="true"/>
+	</e:Group>
+    
+</e:Group>

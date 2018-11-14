@@ -30,7 +30,8 @@
 		"resource/eui_skins/VScrollBarSkin.exml",
 		"resource/eui_skins/VSliderSkin.exml",
 		"resource/skins/buttons/NewGame.exml",
-		"resource/ui/GameUI.exml"
+		"resource/ui/GameUI.exml",
+		"resource/ui/LoadingUI.exml"
 	],
 	"path": "resource/default.thm.json"
 }

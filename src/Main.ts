@@ -63,11 +63,50 @@ class Main extends eui.UILayer {
 
             // 加载默认资源配置
             await RES.loadConfig("resource/default.res.json", "resource/");
-            // 加载资源组
-            await RES.loadGroup("preload");
-            // 加载主题
+
+            // 加载主题（由于加载资源组中要用到 LoadingUI 的exml，所以需要先加载主题配置文件）
             await new Promise(resolve => new eui.Theme("resource/default.thm.json", this.stage)
                 .addEventListener(eui.UIEvent.COMPLETE, resolve, this));
+
+            // 加载资源组
+            await new Promise(resolve => {
+                // 显示loadingUI
+                const loadingUI = new uis.LoadingUI();
+                const front = loadingUI["front"] as eui.Rect;
+                this.addChild(loadingUI);
+
+                // 更新加载进度
+                const data = {
+                    width: 0,
+                    label: "0%"
+                };
+                loadingUI["data"] = data;
+                const onProgress = (event:RES.ResourceEvent) => {
+                    if (event.groupName == "preload") {
+                        if (event.itemsTotal > 0) {
+                            const progress = event.itemsLoaded / event.itemsTotal;
+                            data.width = parseInt("" + front.parent.width * progress);
+                            data.label = parseInt("" + progress * 100) + "%";
+                        }
+                    }
+                };
+                RES.addEventListener(RES.ResourceEvent.GROUP_PROGRESS, onProgress, this);
+
+                // 开始加载资源组
+                RES.loadGroup("preload").then(() => {
+                    // 移除监听
+                    RES.removeEventListener(RES.ResourceEvent.GROUP_PROGRESS, onProgress, this);
+                    // 进度改为 100%
+                    data.width = front.parent.width;
+                    data.label = "100%";
+                    setTimeout(() => {
+                        // 200毫秒后移除loadingUI
+                        this.removeChild(loadingUI);
+                        resolve();
+                    }, 200);
+                });
+            });
+
         }
         catch (e) {
             console.error(e);
