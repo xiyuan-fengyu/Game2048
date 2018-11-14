@@ -99,11 +99,13 @@ class Main extends eui.UILayer {
                     // 进度改为 100%
                     data.width = front.parent.width;
                     data.label = "100%";
-                    setTimeout(() => {
-                        // 200毫秒后移除loadingUI
+                    egret.Tween.get(loadingUI).to({
+                        alpha: 0
+                    }, 300).call(() => {
+                        // loadingUI在300毫秒内fadeOut，然后移除
                         this.removeChild(loadingUI);
                         resolve();
-                    }, 200);
+                    });
                 });
             });
 
