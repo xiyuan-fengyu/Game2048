@@ -72,20 +72,22 @@ class Main extends eui.UILayer {
             await new Promise(resolve => {
                 // 显示loadingUI
                 const loadingUI = new uis.LoadingUI();
-                const front = loadingUI["front"] as eui.Rect;
                 this.addChild(loadingUI);
+                // 立即重绘loadingUI，否则之后获取宽度可能不正确
+                loadingUI.validateNow();
 
-                // 更新加载进度
-                const data = {
+                const data = loadingUI["data"] = {
+                    maxWidth: (loadingUI["back"] as eui.Rect).width,
                     width: 0,
                     label: "0%"
                 };
-                loadingUI["data"] = data;
+
+                // 更新加载进度
                 const onProgress = (event:RES.ResourceEvent) => {
                     if (event.groupName == "preload") {
                         if (event.itemsTotal > 0) {
                             const progress = event.itemsLoaded / event.itemsTotal;
-                            data.width = parseInt("" + front.parent.width * progress);
+                            data.width = parseInt("" + data.maxWidth * progress);
                             data.label = parseInt("" + progress * 100) + "%";
                         }
                     }
@@ -97,7 +99,7 @@ class Main extends eui.UILayer {
                     // 移除监听
                     RES.removeEventListener(RES.ResourceEvent.GROUP_PROGRESS, onProgress, this);
                     // 进度改为 100%
-                    data.width = front.parent.width;
+                    data.width = data.maxWidth;
                     data.label = "100%";
                     egret.Tween.get(loadingUI).to({
                         alpha: 0

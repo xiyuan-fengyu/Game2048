@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <e:Group class="uis.LoadingUI" width="1080" height="1920" xmlns:e="http://ns.egret.com/eui" xmlns:w="http://ns.egret.com/wing">
-	<e:Group id="data"/>
+	<e:Group id="data" visible="false" locked="true"/>
 	<e:Group height="30" verticalCenter="0" left="120" right="120">
 		<e:Rect id="back" left="0" right="0" top="0" bottom="0" fillAlpha="0.2" ellipseHeight="30" ellipseWidth="30" fillColor="0xede0c8"/>
 		<e:Rect id="front" left="0" top="0" bottom="0" ellipseHeight="30" ellipseWidth="30" width="{data.width}" fillColor="0xede0c8"/>

@@ -37,14 +37,11 @@ class Game2048 extends egret.DisplayObjectContainer {
      * 初始化游戏UI
      */
     private initUI() {
-        const uiLayer = new eui.UILayer();
-        this.addChild(uiLayer);
-
         // 通过 exml 初始化游戏场景
         this.gameUI = new uis.GameUI();
         // 绑定data
         this.gameUI["data"] = this.data;
-        uiLayer.addChild(this.gameUI);
+        this.addChild(this.gameUI);
 
         // 获取两个开始新游戏的按钮，为其添加点击事件
         this.gameUI["newGame"].addEventListener(egret.TouchEvent.TOUCH_TAP, this.newGame, this);
